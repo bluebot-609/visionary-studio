@@ -1,0 +1,5 @@
+{
+  "name": "visionary studio",
+  "description": "An AI-powered graphic design and image generation platform using Gemini. It supports text-to-image, image-to-image generation, and a full graphic design suite with features like brand identity creation, logo generation, and trend analysis.",
+  "requestFramePermissions": []
+}
