@@ -12,6 +12,45 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (SENSITIVE)
+.env*
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# Firebase (SENSITIVE)
+.firebaserc
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+storage-debug.log
+firebase-export-*
+
+# Firebase Service Account Keys (SENSITIVE)
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+service-account-*.json
+
+# API Keys and Secrets (SENSITIVE)
+.secrets
+secrets.json
+*.pem
+*.key
+*.cert
+
+# Debug and temporary documentation files
+*DEBUG*.md
+*FIX*.md
+*TEST*.md
+QUICK_FIX_GUIDE.md
+CHANGELOG_SHOT_LIBRARY.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
