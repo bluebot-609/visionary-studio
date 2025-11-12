@@ -147,6 +147,7 @@ export interface CreativeDirectorDecision {
   modelType?: string;
   modelCount?: number;
   poseGuidance?: string;
+  productInteraction?: string; // Describes spatial relationship between product and model (e.g., "Model holds perfume at chest level")
   presentationStyle: string; // 'flat-lay' | 'on-model' | 'floating' | etc.
   mood: string;
   colorPalette: string[];
@@ -207,6 +208,7 @@ export interface AdCreativeRequest {
   platformPreference?: string; // Optional override
   selectedConcept?: AdConcept; // User-selected concept
   userPreferences?: UserPreferences; // User preferences
+  aspectRatio?: '1:1' | '3:4' | '9:16' | '16:9'; // Explicit aspect ratio override
 }
 
 export interface AdCreative {

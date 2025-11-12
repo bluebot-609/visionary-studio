@@ -193,8 +193,23 @@ LVI Recommendations to integrate:
 - Space Use: ${lviRecommendations.spaceUse}
 ` : ''}
 
+${selectedConcept.modelRequired ? `
+**CRITICAL: PRODUCT-MODEL SPATIAL RELATIONSHIP**
+Since this concept requires a model, you MUST define how the product and model interact spatially:
+- Provide clear "productInteraction" guidance describing WHERE and HOW the product appears relative to the model
+- Examples:
+  * "Model holds the perfume bottle at chest level, prominently displayed in their hand"
+  * "Watch is worn on model's wrist, positioned prominently in the foreground"
+  * "Perfume bottle sits on a table in the foreground while model gazes at it from behind"
+  * "Model cradles the product delicately in both hands at center frame"
+  * "Product is placed on a surface in the foreground, with model slightly out of focus in the background"
+- The product MUST remain visible and prominent - never obscured by the model or background
+- Consider the product category: wearables (watches, jewelry) = on model; perfumes/cosmetics = held or displayed; larger items = placed near model
+` : ''}
+
 Based on the selected concept, make final strategic creative decisions (platform, location, color palette, composition, aspect ratio) and provide your recommendations in JSON format.
-${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables when applicable.' : ''}`;
+${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables when applicable.' : ''}
+${selectedConcept.modelRequired ? 'IMPORTANT: Include productInteraction field with clear spatial guidance for product-model relationship.' : ''}`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -211,6 +226,7 @@ ${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables
           modelType: { type: Type.STRING },
           modelCount: { type: Type.NUMBER },
           poseGuidance: { type: Type.STRING },
+          productInteraction: { type: Type.STRING },
           presentationStyle: { type: Type.STRING },
           mood: { type: Type.STRING },
           colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },

@@ -21,14 +21,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title, size = 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur" onClick={onClose}>
       <div 
-        className={`bg-[#1a1a1a] rounded-lg shadow-2xl p-6 w-full ${sizeClasses[size]} m-4 border border-slate-800 relative transform transition-all duration-300 scale-95 animate-fade-in-up`} 
+        className={`relative m-4 w-full ${sizeClasses[size]} transform rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.03] to-transparent p-8 shadow-glass-lg backdrop-blur-2xl transition-all duration-300 scale-95 animate-fade-in-up`} 
         onClick={e => e.stopPropagation()}
         style={{ animation: 'fadeInUp 0.3s ease-out forwards' }}
       >
-         <h2 className="text-xl font-bold mb-4 text-gray-100">{title}</h2>
-         <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-gray-100 text-3xl font-light leading-none">&times;</button>
+         <h2 className="mb-4 font-display text-2xl text-white">{title}</h2>
+         <button onClick={onClose} className="absolute right-6 top-6 text-2xl font-light text-white/60 transition hover:text-white">
+           &times;
+         </button>
          {children}
       </div>
       <style>{`

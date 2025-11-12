@@ -68,7 +68,9 @@ export const orchestrateAdCreation = async (
   
   // This step used to be Step 3, now it's Step 4
   onProgress?.('Generating image...', (++currentStep / totalSteps) * 100);
-  const mappedAspectRatio = mapAspectRatio(creativeDirection.aspectRatio);
+  // If caller provided an explicit aspect ratio, prefer it over AI decision
+  const chosenAspectRatio = request.aspectRatio || creativeDirection.aspectRatio;
+  const mappedAspectRatio = mapAspectRatio(chosenAspectRatio);
   
   // --- PASS THE NEW ARTISTIC PROMPT TO THE IMAGE MODEL ---
   const { images, prompt } = await generateImages(

@@ -234,6 +234,31 @@ Generate a ${photographerSpecs.realismLevel} image based on the following profes
 ---
 ### **Professional Photography Shot Plan**
 
+#### **0. PRODUCT INTEGRITY & VISIBILITY REQUIREMENTS (CRITICAL)**
+
+**🔒 PRODUCT PRESERVATION (MOST IMPORTANT):**
+- **Product Type:** ${productAnalysis.productType} (${productAnalysis.productCategory})
+- **CRITICAL:** The product's appearance from the reference image MUST be preserved exactly as-is
+- **DO NOT ALTER:** Product colors, design, textures, branding, logos, text, or visual identity
+- **PRESERVE:** Product shape, form, proportions, materials, and all design elements
+- **RULE:** You are creating a new SCENE around the existing PRODUCT, not redesigning the product
+
+**👁️ PRODUCT VISIBILITY:**
+- **Product Prominence:** The ${productAnalysis.productType} MUST be clearly visible, recognizable, and prominent in the final image
+${creativeDirection.modelRequired ? `- **Product-Model Relationship:** The product must be visible and well-integrated with the model (held, worn, displayed, or positioned nearby). The model should complement the product, NOT overshadow it.
+- **Visual Hierarchy:** Both product and model are important, but ensure the ${productAnalysis.productType} maintains clear visual presence and is NOT hidden, obscured, or pushed out of frame.
+- **Spatial Positioning:** The product should occupy a clearly defined, prominent position in the composition.` : 
+`- **Visual Focus:** The ${productAnalysis.productType} is the sole focal point and primary subject of the image.
+- **Central Positioning:** Position the product as the undisputed center of visual attention.`}
+
+**📐 COMPOSITION RULES:**
+Ensure the ${productAnalysis.productType} is:
+  * NOT obscured by other elements (hands, clothing, backgrounds, lighting effects)
+  * NOT blurred out of focus unless intentionally for artistic effect
+  * NOT pushed to edges or corners of the frame
+  * CLEARLY identifiable and showcasing its key features
+  * Maintaining its original appearance from the reference image
+
 #### **1. Camera & Lens Configuration**
 - **Camera:** ${photographerSpecs.camera.type} (${photographerSpecs.camera.model})
 - **Lens:** ${photographerSpecs.camera.lens.focal_length_mm}mm ${photographerSpecs.camera.lens.type} lens.
@@ -250,7 +275,8 @@ ${lightingDescription}
 - **Background:** The subject is set against a ${photographerSpecs.background.type} background. The surface is ${photographerSpecs.background.surface} and made of ${photographerSpecs.background.material}. The overall scene is: ${photographerSpecs.background.description}.
 - **Presentation Style:** ${creativeDirection.presentationStyle}
 - **Location:** ${creativeDirection.location}
-${creativeDirection.modelRequired ? `- **Model:** ${creativeDirection.modelType || 'Professional model'}${creativeDirection.poseGuidance ? `, ${creativeDirection.poseGuidance}` : ''}` : ''}
+${creativeDirection.modelRequired ? `- **Model:** ${creativeDirection.modelType || 'Professional model'}${creativeDirection.poseGuidance ? `, ${creativeDirection.poseGuidance}` : ''}
+${creativeDirection.productInteraction ? `- **Product-Model Spatial Relationship:** ${creativeDirection.productInteraction}` : ''}` : ''}
 
 #### **4. Critical Realism Details**
 ${photographerSpecs.skinTexture ? `- **Skin Texture:** Pay extreme attention to realism. Skin must have a "${photographerSpecs.skinTexture}" texture.` : ''}

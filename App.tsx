@@ -1,48 +1,31 @@
 
-import React, { useState } from 'react';
-import ImageGeneration from './components/ImageGeneration';
-import Home from './components/Home';
-import { VisionaryIcon } from './icons';
+import { Suspense } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { ProtectedRoute } from './components/protected-route';
+import { AuthProvider } from './providers/auth-provider';
+import Dashboard from './routes/dashboard';
+import Landing from './routes/landing';
 
-// FIX: Export the View type to be used for view switching.
-export type View = 'home' | 'imageGeneration';
-
-
-const App: React.FC = () => {
-  // FIX: Add state to manage the current view.
-  const [view, setView] = useState<View>('home');
-
-  // FIX: Create a function to render the component based on the current view state.
-  const renderView = () => {
-    switch (view) {
-      case 'imageGeneration':
-        return <ImageGeneration />;
-      case 'home':
-      default:
-        return <Home setView={setView} />;
-    }
-  };
-
+const App = () => {
   return (
-    <div className="min-h-screen bg-[#121212] text-gray-300 font-sans antialiased">
-      <header className="p-4 border-b border-slate-800 bg-[#121212]/80 backdrop-blur-sm sticky top-0 z-50">
-        <nav className="container mx-auto flex justify-between items-center">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setView('home')}
-          >
-            <VisionaryIcon className="w-8 h-8 text-sky-500" />
-            <h1 className="text-xl font-bold text-gray-100 tracking-wide">
-              Visionary
-            </h1>
-          </div>
-        </nav>
-      </header>
-      
-      <main className="container mx-auto p-4 md:p-8">
-        {renderView()}
-      </main>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Suspense
+          fallback={
+            <div className="flex h-screen items-center justify-center bg-surface text-white/70">
+              Preparing your studio…
+            </div>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    </BrowserRouter>
   );
 };
 
