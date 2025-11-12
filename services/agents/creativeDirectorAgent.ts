@@ -3,7 +3,7 @@ import type { ProductAnalysisResult, CreativeDirectorDecision, AdConcept, UserPr
 import { CREATIVE_DIRECTOR_PROMPT, LUXURY_VISUAL_INTELLIGENCE_PROMPT } from './prompts';
 import { evaluateLuxuryAlignment, getLVIRecommendations, getVisualIdentity } from './luxuryVisualIntelligence';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Generate multiple concepts for user selection
 export const generateConcepts = async (

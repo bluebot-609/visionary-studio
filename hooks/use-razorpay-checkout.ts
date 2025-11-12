@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { createRazorpayOrder } from '../services/functionsClient';
 import { useAuth } from './use-auth';
 
 const RAZORPAY_SCRIPT_ID = 'razorpay-checkout-js';
@@ -55,14 +54,25 @@ export const useRazorpayCheckout = () => {
           throw new Error('Razorpay SDK unavailable');
         }
 
-        const order = await createRazorpayOrder({
-          amount: payload.amount,
-          currency: payload.currency,
-          planId: payload.planId,
+        const response = await fetch('/api/payment/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: payload.amount,
+            currency: payload.currency,
+            planId: payload.planId,
+          }),
         });
 
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create order');
+        }
+
+        const order = await response.json();
+
         const razorpay = new window.Razorpay({
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
           amount: order.amount,
           currency: order.currency,
           name: 'Visionary Studio',

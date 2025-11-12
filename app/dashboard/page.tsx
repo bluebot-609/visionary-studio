@@ -1,9 +1,12 @@
+'use client';
+
 import { Gauge, Library, LogOut, Sparkles, Menu, X, ChevronDown } from 'lucide-react';
 import { useMemo, useState, useEffect, useRef } from 'react';
-import ImageGeneration from '../components/ImageGeneration';
-import ShotLibrary from '../components/ShotLibrary';
-import { useAuth } from '../hooks/use-auth';
-import { useRazorpayCheckout } from '../hooks/use-razorpay-checkout';
+import { useRouter } from 'next/navigation';
+import ImageGeneration from '../../components/ImageGeneration';
+import ShotLibrary from '../../components/ShotLibrary';
+import { useAuth } from '../../hooks/use-auth';
+import { useRazorpayCheckout } from '../../hooks/use-razorpay-checkout';
 
 type ViewType = 'dashboard' | 'shot-library';
 
@@ -12,8 +15,9 @@ const navItems: { label: string; icon: typeof Gauge; view: ViewType }[] = [
   { label: 'Shot Library', icon: Library, view: 'shot-library' },
 ];
 
-const Dashboard = () => {
-  const { user, signOut } = useAuth();
+export default function DashboardPage() {
+  const { user, signOut, loading } = useAuth();
+  const router = useRouter();
   const { error: paymentError, clearError } = useRazorpayCheckout();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -31,6 +35,13 @@ const Dashboard = () => {
       .slice(0, 2)
       .toUpperCase();
   }, [user?.displayName]);
+
+  // Redirect to landing page if user is not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/');
+    }
+  }, [user, loading, router]);
 
   // Click outside handler to close dropdown
   useEffect(() => {
@@ -54,6 +65,24 @@ const Dashboard = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isProfileDropdownOpen]);
+
+  // Show loading state while auth is being verified
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent/30 border-t-accent" />
+          <p className="text-sm text-white/60">Verifying authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render dashboard content if user is not authenticated
+  // (redirect will happen via useEffect, but this prevents flash)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="studio-grid flex min-h-screen text-white">
@@ -95,7 +124,17 @@ const Dashboard = () => {
             <span className="tracking-[0.4em]">BETA</span>
           </div>
           <button
-            onClick={() => signOut()}
+            onClick={async () => {
+              try {
+                await signOut();
+                router.replace('/');
+              } catch (error) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.error('Error signing out:', error);
+                }
+                router.replace('/');
+              }
+            }}
             className="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white transition hover:border-white/30 hover:bg-white/[0.12]"
             title="Sign out"
           >
@@ -174,7 +213,17 @@ const Dashboard = () => {
               </div>
             </div>
             <button
-              onClick={() => signOut()}
+              onClick={async () => {
+                try {
+                  await signOut();
+                  router.replace('/');
+                } catch (error) {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.error('Error signing out:', error);
+                  }
+                  router.replace('/');
+                }
+              }}
               className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white transition hover:border-white/30 hover:bg-white/[0.12]"
             >
               <LogOut className="h-4 w-4" />
@@ -250,9 +299,21 @@ const Dashboard = () => {
                   </div>
                   <div className="p-2">
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsProfileDropdownOpen(false);
-                        signOut();
+                        try {
+                          // Wait for signOut to complete (clears cookie and Firebase auth)
+                          await signOut();
+                          // Small delay to ensure cookie is cleared and state updates
+                          await new Promise(resolve => setTimeout(resolve, 150));
+                          router.replace('/');
+                        } catch (error) {
+                          if (process.env.NODE_ENV === 'development') {
+                            console.error('Error signing out:', error);
+                          }
+                          // Still redirect even if there's an error
+                          router.replace('/');
+                        }
                       }}
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
@@ -293,9 +354,21 @@ const Dashboard = () => {
                   </div>
                   <div className="p-2">
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsProfileDropdownOpen(false);
-                        signOut();
+                        try {
+                          // Wait for signOut to complete (clears cookie and Firebase auth)
+                          await signOut();
+                          // Small delay to ensure cookie is cleared and state updates
+                          await new Promise(resolve => setTimeout(resolve, 150));
+                          router.replace('/');
+                        } catch (error) {
+                          if (process.env.NODE_ENV === 'development') {
+                            console.error('Error signing out:', error);
+                          }
+                          // Still redirect even if there's an error
+                          router.replace('/');
+                        }
                       }}
                       className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/10 hover:text-white"
                     >
@@ -338,7 +411,5 @@ const Dashboard = () => {
       </main>
     </div>
   );
-};
-
-export default Dashboard;
+}
 

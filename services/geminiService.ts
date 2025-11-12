@@ -2,7 +2,7 @@ import { GoogleGenAI, Type, Modality } from "@google/genai";
 import type { UploadedFile, Concept, CreativeBrief } from '../types';
 import { CREATIVE_BRIEF_OPTIONS } from '../options';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const fileToGenerativePart = (file: UploadedFile) => {
   return {

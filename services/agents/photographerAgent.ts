@@ -3,7 +3,7 @@ import type { ProductAnalysisResult, CreativeDirectorDecision, PhotographerSpeci
 import { PHOTOGRAPHER_PROMPT } from './prompts';
 import { evaluateLuxuryAlignment, getVisualIdentity } from './luxuryVisualIntelligence';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const getPhotographerSpecs = async (
   productAnalysis: ProductAnalysisResult,

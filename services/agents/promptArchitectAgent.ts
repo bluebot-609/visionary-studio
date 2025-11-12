@@ -3,7 +3,7 @@ import type { ProductAnalysisResult, CreativeDirectorDecision, PhotographerSpeci
 import { MASTER_PROMPT_TEMPLATE } from './prompts';
 
 // This is the new agent that translates your technical specs into art.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // This "meta-prompt" instructs the LLM to be a "prompt poet"
 const PROMPT_ARCHITECT_SYSTEM_PROMPT = `You are a world-class prompt artist and high-fashion photographer. Your task is to translate a highly technical, structured 'Shot Plan' into a single, evocative, and artistic paragraph for an image generation model.

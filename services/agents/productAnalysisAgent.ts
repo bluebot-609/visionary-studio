@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { ProductAnalysisResult, UploadedFile } from '../../types';
 import { PRODUCT_ANALYSIS_PROMPT } from './prompts';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const fileToGenerativePart = (file: UploadedFile) => {
   return {

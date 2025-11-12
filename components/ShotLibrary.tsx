@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trash2, CheckSquare, Square } from 'lucide-react';
 import { getUserShots, deleteShots, type SavedShot } from '../services/shotLibrary';

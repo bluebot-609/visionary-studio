@@ -1,3 +1,5 @@
+'use client';
+
 import {
   createContext,
   useCallback,
@@ -7,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, getIdToken } from 'firebase/auth';
 import {
   auth,
   signInWithGoogle,
@@ -29,8 +31,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser);
+      
+      // Set or clear auth cookie based on user state
+      if (nextUser) {
+        try {
+          // Get ID token and set it in cookie via API route
+          const idToken = await getIdToken(nextUser);
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          });
+        } catch (error) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error setting auth session:', error);
+          }
+        }
+      } else {
+        // Clear auth cookie on logout
+        try {
+          await fetch('/api/auth/session', {
+            method: 'DELETE',
+          });
+        } catch (error) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error clearing auth session:', error);
+          }
+        }
+      }
+      
       setLoading(false);
     });
     return unsubscribe;
@@ -48,6 +79,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = useCallback(async () => {
     setLoading(true);
     try {
+      // Clear cookie first, then sign out from Firebase
+      try {
+        await fetch('/api/auth/session', {
+          method: 'DELETE',
+        });
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error clearing auth session:', error);
+        }
+      }
       await signOutFromFirebase();
     } finally {
       setLoading(false);

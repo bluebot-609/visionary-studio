@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -8,7 +10,7 @@ import {
   UploadCloud,
   Users,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { BackgroundBlobs } from '../components/background-blobs';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -44,7 +46,7 @@ const features = [
 const testimonials = [
   {
     quote:
-      'The fastest way we’ve achieved premium campaign visuals without booking a studio. It feels like collaborating with a patient art director.',
+      "The fastest way we've achieved premium campaign visuals without booking a studio. It feels like collaborating with a patient art director.",
     name: 'Sanya Kapoor',
     role: 'Founder, Alchemy Atelier',
   },
@@ -83,15 +85,20 @@ const plans = [
   },
 ];
 
-const Landing = () => {
+export default function LandingPage() {
   const { user, signIn, loading } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard', { replace: true });
+    if (user && !loading) {
+      // Give auth provider time to set cookie via API route
+      // The middleware will allow navigation requests even if cookie isn't set yet
+      const timer = setTimeout(() => {
+        router.replace('/dashboard');
+      }, 300);
+      return () => clearTimeout(timer);
     }
-  }, [user, navigate]);
+  }, [user, loading, router]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-mesh-linear text-slate-100">
@@ -412,7 +419,5 @@ const Landing = () => {
       </div>
     </div>
   );
-};
-
-export default Landing;
+}
 
