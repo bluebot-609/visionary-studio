@@ -644,11 +644,6 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                 saturation: 100,
             };
             
-            // Clear loading states before updating UI
-            setIsLoading(false);
-            setCurrentStep('');
-            setProgress(0);
-            
             setGeneratedImage(newImage);
             setGeneratedPrompt(adCreative.prompt);
             setWizardStep(3);
@@ -670,6 +665,8 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
         } catch (e) {
             console.error(e);
             setError('Failed to generate image. Please check the console for details.');
+        } finally {
+            // Clear loading states after all operations complete
             setIsLoading(false);
             setCurrentStep('');
             setProgress(0);

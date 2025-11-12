@@ -40,7 +40,8 @@ const Dashboard = () => {
       const isOutsideMobile = mobileProfileDropdownRef.current && 
         !mobileProfileDropdownRef.current.contains(event.target as Node);
       
-      if (isOutsideDesktop && isOutsideMobile) {
+      // Close if click is outside whichever ref exists (OR logic, not AND)
+      if (isOutsideDesktop || isOutsideMobile) {
         setIsProfileDropdownOpen(false);
       }
     };
