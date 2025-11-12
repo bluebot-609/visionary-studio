@@ -34,30 +34,57 @@ export const generateImages = async (
 
     const imageToImagePrompt = `CRITICAL INSTRUCTIONS FOR IMAGE GENERATION:
 
-You are generating a COMPLETELY NEW image based on the reference image provided. This is NOT an edit of the existing image - you must create a brand new photograph with the exact aspect ratio specified below.
+**🎯 PRIMARY RULE - PRODUCT INTEGRITY MUST BE PRESERVED:**
+
+The reference image contains a PRODUCT that is the core subject of this ad creative. Your task is to:
+1. **PRESERVE the product's appearance EXACTLY as shown in the reference image** - do NOT alter, re-imagine, or modify the product itself
+2. Place this product in a new, professionally composed scene according to the specifications below
+3. The product's colors, textures, design, branding, and visual identity MUST remain identical to the reference
+
+**WHAT TO PRESERVE (DO NOT CHANGE):**
+- ✅ Product shape, form, and design
+- ✅ Product colors and color scheme
+- ✅ Product textures and materials
+- ✅ Brand logos, text, and labels on the product
+- ✅ Product packaging design
+- ✅ Product proportions and scale
+- ✅ Product's visual identity
+
+**WHAT TO CHANGE (Create New):**
+- ❌ Background and environment
+- ❌ Lighting setup and atmosphere
+- ❌ Scene composition and staging
+- ❌ Models or props (if specified)
+- ❌ Overall mood and aesthetic
+- ❌ Camera angle and perspective
 
 **MANDATORY ASPECT RATIO REQUIREMENT:**
 - The output image MUST have an aspect ratio of EXACTLY ${aspectRatio} (${aspectRatioDescription})
-- The reference image is provided ONLY as inspiration and style reference
-- You MUST generate a new image with the correct dimensions, NOT just edit the reference
-- The output image dimensions must match ${aspectRatio} exactly - regardless of the reference image's current aspect ratio, you must generate a completely new image with the target aspect ratio
+- If aspect ratio changes, extend or adjust the SCENE and BACKGROUND, but keep the product itself intact
+- The output image dimensions must match ${aspectRatio} exactly
 
-**HOW TO HANDLE ASPECT RATIO CHANGE:**
-- If the new aspect ratio is wider than the reference: Extend the scene horizontally with new, contextually appropriate details
-- If the new aspect ratio is taller than the reference: Extend the scene vertically with new, contextually appropriate details  
-- If the new aspect ratio is narrower: Crop intelligently while maintaining the focal point, or regenerate with adjusted composition
-- DO NOT simply crop or resize the reference image - generate a completely new image that follows the specifications
+**HOW TO HANDLE ASPECT RATIO CHANGES:**
+- If the new aspect ratio is wider: Extend the scene/background horizontally (add more environment, not more product)
+- If the new aspect ratio is taller: Extend the scene/background vertically (add more environment, not more product)
+- If the new aspect ratio is narrower: Adjust composition while keeping product centered and visible
+- CRITICAL: The product itself should maintain its original proportions and appearance regardless of aspect ratio changes
 
-**OUTPUT REQUIREMENTS:**
-- Generate a brand new professional-quality photograph
-- Apply ALL the detailed specifications from the shot plan below
-- Output image MUST have dimensions that exactly match ${aspectRatio} aspect ratio
-- The image should be inspired by the reference but be a completely new generation
+**PRODUCT PLACEMENT REQUIREMENTS:**
+- Position the product according to the composition guidelines below
+- Ensure the product remains the primary or co-primary focal point
+- If models are specified, ensure product is visible and not obscured
+- Maintain product clarity and recognizability
 
 === DETAILED SHOT PLAN ===
 ${masterPrompt}
 
-**FINAL REMINDER:** The output image MUST be generated with aspect ratio ${aspectRatio} (${aspectRatioDescription}). Do not preserve the reference image's dimensions. Generate a completely new image with the correct aspect ratio.`;
+**FINAL CHECKLIST:**
+✅ Product appearance is preserved exactly from reference image
+✅ Product colors, textures, and design match the reference
+✅ Brand elements (logos, text) are intact and legible
+✅ Scene, lighting, and composition follow the shot plan specifications
+✅ Output aspect ratio is exactly ${aspectRatio} (${aspectRatioDescription})
+✅ Product is clearly visible and prominent in the final image`;
 
     const imagePart = fileToGenerativePart(imageFile);
     const textPart = { text: imageToImagePrompt };
