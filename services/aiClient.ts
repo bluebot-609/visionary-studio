@@ -3,21 +3,62 @@
  * This replaces direct imports of AI agents to keep API keys server-side
  */
 
-import type { AdConcept, ProductAnalysisResult, AdCreative, AdCreativeRequest, SeductiveCaptions } from '../types';
+import type { AdConcept, ProductAnalysisResult, AdCreative, AdCreativeRequest, SeductiveCaptions, UploadedFile } from '../types';
+
+/**
+ * Analyze product and get preset recommendations via API route
+ */
+export const analyzeProductForPresets = async (
+  imageFile?: UploadedFile,
+  textDescription?: string,
+  onProgress?: (step: string, progress: number) => void
+): Promise<{ productAnalysis: ProductAnalysisResult; recommendedPresets: string[] }> => {
+  onProgress?.('Analyzing product...', 50);
+  
+  const response = await fetch('/api/ai/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      imageFile,
+      textDescription,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to analyze product');
+  }
+
+  onProgress?.('Analysis complete', 100);
+  const data = await response.json();
+  
+  return {
+    productAnalysis: data.productAnalysis,
+    recommendedPresets: data.recommendedPresets || []
+  };
+};
 
 /**
  * Generate ad concepts via API route
  */
 export const generateConceptsForSelection = async (
   request: AdCreativeRequest,
+  existingProductAnalysis?: ProductAnalysisResult,
   onProgress?: (step: string, progress: number) => void
-): Promise<{ productAnalysis: ProductAnalysisResult; concepts: AdConcept[] }> => {
-  onProgress?.('Analyzing product...', 30);
+): Promise<{ productAnalysis: ProductAnalysisResult; concepts: AdConcept[]; recommendedPresets: string[] }> => {
+  if (!existingProductAnalysis) {
+    onProgress?.('Analyzing product...', 30);
+  } else {
+    onProgress?.('Generating concepts...', 30);
+  }
   
   const response = await fetch('/api/ai/concepts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
+    body: JSON.stringify({
+      ...request,
+      existingProductAnalysis,
+    }),
   });
 
   if (!response.ok) {
@@ -29,7 +70,11 @@ export const generateConceptsForSelection = async (
   const data = await response.json();
   onProgress?.('Concepts generated', 100);
   
-  return data;
+  // Extract recommendedPresets from productAnalysis
+  return {
+    ...data,
+    recommendedPresets: data.productAnalysis?.recommendedPresets || []
+  };
 };
 
 /**

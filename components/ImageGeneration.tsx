@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
-import type { UploadedFile, GeneratedImage, SeductiveCaptions, AdConcept, UserPreferences, ProductAnalysisResult } from '../types';
-import { generateConceptsForSelection, orchestrateAdCreation, generateCaptions } from '../services/aiClient';
+import type { UploadedFile, GeneratedImage, SeductiveCaptions, AdConcept, ProductAnalysisResult } from '../types';
+import { analyzeProductForPresets, generateConceptsForSelection, orchestrateAdCreation, generateCaptions } from '../services/aiClient';
 import { saveShot } from '../services/shotLibrary';
+import { ALL_PRESETS } from '../services/presets';
 import Modal from './Modal';
 import { DownloadIcon, StarsIcon, SlidersHorizontalIcon } from '../icons';
 import { Card } from './ui/card';
@@ -14,6 +15,7 @@ import {
   ImageUpload,
   ConceptSelection,
   ImageResults,
+  PresetSelection,
 } from './image-generation';
 
 const fileToBase64 = (file: File): Promise<string> =>
@@ -24,96 +26,6 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.onerror = (error) => reject(error);
   });
 
-// --- SUB-COMPONENTS (Extracted to ./image-generation/) ---
-// Stepper, LiquidFillLoader, ImageUpload, ConceptSelection, ImageResults are now in separate files
-
-const PreferencesPanel: React.FC<{
-    preferences: UserPreferences;
-    onPreferencesChange: (prefs: UserPreferences) => void;
-}> = ({ preferences, onPreferencesChange }) => {
-    const updatePreference = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
-        onPreferencesChange({ ...preferences, [key]: value });
-    };
-    
-    return (
-        <section className="glass-card rounded-[32px] md:rounded-[42px] bg-black/35 p-4 sm:p-6 md:p-8 lg:p-10">
-            <div className="flex flex-col gap-2 md:gap-3">
-                <span className="text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.45em] text-white/40">Creative system</span>
-                <div className="flex flex-wrap items-end justify-between gap-4 md:gap-6">
-                    <span className="rounded-full border border-white/10 px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-xs font-semibold uppercase tracking-[0.25em] md:tracking-[0.35em] text-white/50">
-                        Optional controls
-                    </span>
-                </div>
-            </div>
-
-            <div className="mt-6 md:mt-10 grid gap-4 md:gap-8 grid-cols-1 md:grid-cols-3">
-                {[
-                    {
-                        key: 'modelPreference' as const,
-                        label: 'Model presence',
-                        options: [
-                            { value: 'let-ai-decide', label: 'Let AI decide' },
-                            { value: 'with-model', label: 'With model' },
-                            { value: 'product-only', label: 'Product only' },
-                            { value: 'hybrid', label: 'Hands / hybrid' },
-                        ],
-                    },
-                    {
-                        key: 'aestheticStyle' as const,
-                        label: 'Aesthetic energy',
-                        options: [
-                            { value: 'let-ai-decide', label: 'Let AI decide' },
-                            { value: 'luxurious', label: 'Luxurious' },
-                            { value: 'minimalist', label: 'Minimalist' },
-                            { value: 'energetic', label: 'Energetic' },
-                            { value: 'calm', label: 'Calm' },
-                            { value: 'mysterious', label: 'Mysterious' },
-                            { value: 'joyful', label: 'Joyful' },
-                        ],
-                    },
-                    {
-                        key: 'styleDirection' as const,
-                        label: 'Style direction',
-                        options: [
-                            { value: 'let-ai-decide', label: 'Let AI decide' },
-                            { value: 'modern', label: 'Modern' },
-                            { value: 'classic', label: 'Classic' },
-                            { value: 'edgy', label: 'Edgy' },
-                            { value: 'soft', label: 'Soft' },
-                        ],
-                    },
-                ].map((group) => (
-                    <div key={group.key} className="space-y-3 md:space-y-4 rounded-[20px] md:rounded-[28px] border border-white/10 bg-white/[0.02] p-4 md:p-6">
-                        <span className="text-[10px] md:text-xs uppercase tracking-[0.3em] md:tracking-[0.45em] text-white/40">{group.label}</span>
-                        <div className="flex flex-wrap gap-2 md:gap-3">
-                            {group.options.map((option) => {
-                                const isSelected =
-                                    (preferences[group.key] ?? 'let-ai-decide') === option.value;
-                                return (
-                                    <button
-                                        key={option.value}
-                                        type="button"
-                                        onClick={() =>
-                                            updatePreference(group.key, option.value as UserPreferences[typeof group.key])
-                                        }
-                                        className={`rounded-full border px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm transition whitespace-nowrap ${
-                                            isSelected
-                                                ? 'border-accent bg-accent/20 text-accent'
-                                                : 'border-white/15 bg-transparent text-white/70 hover:border-white/35 hover:bg-white/[0.06]'
-                                        }`}
-                                    >
-                                        {option.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </section>
-    );
-};
-
 // Main Component
 interface ImageGenerationProps {
     userId?: string;
@@ -123,18 +35,20 @@ interface ImageGenerationProps {
 const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved }) => {
     const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
     const [textDescription, setTextDescription] = useState<string>('');
-    const [userPreferences, setUserPreferences] = useState<UserPreferences>({});
     const [concepts, setConcepts] = useState<AdConcept[]>([]);
     const [selectedConcept, setSelectedConcept] = useState<AdConcept | null>(null);
     const [productAnalysis, setProductAnalysis] = useState<ProductAnalysisResult | null>(null);
     const [generatedImage, setGeneratedImage] = useState<GeneratedImage | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingConcepts, setIsGeneratingConcepts] = useState(false);
+    const [isAnalyzingProduct, setIsAnalyzingProduct] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentStep, setCurrentStep] = useState<string>('');
     const [progress, setProgress] = useState<number>(0);
     const [aspectRatio, setAspectRatio] = useState<'1:1' | '3:4' | '9:16' | '16:9'>('1:1');
     const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | 3>(0);
+    const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+    const [recommendedPresets, setRecommendedPresets] = useState<string[]>([]);
     
     const [isViewingImage, setIsViewingImage] = useState<boolean>(false);
     const [editingImage, setEditingImage] = useState<GeneratedImage | null>(null);
@@ -144,7 +58,6 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
     const resetProject = () => {
         setUploadedFile(null);
         setTextDescription('');
-        setUserPreferences({});
         setConcepts([]);
         setSelectedConcept(null);
         setProductAnalysis(null);
@@ -154,6 +67,8 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
         setProgress(0);
         setAspectRatio('1:1');
         setWizardStep(0);
+        setSelectedPreset(null);
+        setRecommendedPresets([]);
         const fileInput = document.getElementById('file-upload') as HTMLInputElement | null;
         if (fileInput) fileInput.value = '';
     };
@@ -178,6 +93,40 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
         }
     };
 
+    const handleAnalyzeProduct = async () => {
+        if (!uploadedFile && !textDescription.trim()) {
+            return; // No analysis needed if no input
+        }
+
+        setIsAnalyzingProduct(true);
+        setError(null);
+        setCurrentStep('Analyzing product...');
+        setProgress(0);
+
+        try {
+            const result = await analyzeProductForPresets(
+                uploadedFile || undefined,
+                textDescription.trim() || undefined,
+                (step, progressValue) => {
+                    setCurrentStep(step);
+                    setProgress(progressValue);
+                }
+            );
+
+            setProductAnalysis(result.productAnalysis);
+            setRecommendedPresets(result.recommendedPresets);
+        } catch (e) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error(e);
+            }
+            setError('Failed to analyze product. You can still proceed with preset selection.');
+        } finally {
+            setIsAnalyzingProduct(false);
+            setCurrentStep('');
+            setProgress(0);
+        }
+    };
+
     const handleGenerateConcepts = async () => {
         if (!uploadedFile && !textDescription.trim()) {
             setError('Please provide either an image or text description (or both).');
@@ -188,7 +137,7 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
         setError(null);
         setConcepts([]);
         setSelectedConcept(null);
-        setCurrentStep('Analyzing product...');
+        setCurrentStep('Generating concepts...');
         setProgress(0);
 
         try {
@@ -196,16 +145,21 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                 {
                     imageFile: uploadedFile || undefined,
                     textDescription: textDescription.trim() || undefined,
-                    userPreferences,
+                    selectedPreset: selectedPreset || undefined,
                     aspectRatio,
                 },
+                productAnalysis || undefined, // Pass existing analysis to avoid re-analyzing
                 (step, progressValue) => {
                     setCurrentStep(step);
                     setProgress(progressValue);
                 }
             );
 
-            setProductAnalysis(result.productAnalysis);
+            // Update product analysis if it wasn't set before
+            if (!productAnalysis) {
+                setProductAnalysis(result.productAnalysis);
+                setRecommendedPresets(result.recommendedPresets);
+            }
             setConcepts(result.concepts);
             setWizardStep(2);
         } catch (e) {
@@ -237,7 +191,7 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                 {
                     imageFile: uploadedFile || undefined,
                     textDescription: textDescription.trim() || undefined,
-                    userPreferences,
+                    selectedPreset: selectedPreset || undefined,
                     selectedConcept,
                     aspectRatio,
                 },
@@ -358,7 +312,7 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                             <div className="relative">
                                 {/* Liquid fill loading indicator */}
                                 <LiquidFillLoader
-                                    visible={(isGeneratingConcepts || isLoading) && !!currentStep}
+                                    visible={(isAnalyzingProduct || isGeneratingConcepts || isLoading) && !!currentStep}
                                     currentStep={currentStep || 'Processing...'}
                                     progress={progress}
                                 />
@@ -382,10 +336,17 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                                             </Button>
                                             <Button
                                                 size="lg"
-                                                onClick={() => setWizardStep(1)}
+                                                onClick={async () => {
+                                                    // Trigger product analysis when moving to Step 1
+                                                    if (uploadedFile || textDescription.trim()) {
+                                                        await handleAnalyzeProduct();
+                                                    }
+                                                    setWizardStep(1);
+                                                }}
+                                                disabled={isAnalyzingProduct || (!uploadedFile && !textDescription.trim())}
                                                 className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
                                             >
-                                                Next
+                                                {isAnalyzingProduct ? 'Analyzing...' : 'Next'}
                                             </Button>
                                         </div>
                                     </div>
@@ -413,9 +374,11 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                                             </div>
                                             <p className="mt-2 md:mt-3 text-[10px] md:text-xs text-white/50">Used directly for rendering. 1:1 is default.</p>
                                         </div>
-                                        <PreferencesPanel
-                                            preferences={userPreferences}
-                                            onPreferencesChange={setUserPreferences}
+                                        <PresetSelection
+                                            presets={ALL_PRESETS}
+                                            recommendedPresets={recommendedPresets}
+                                            selectedPreset={selectedPreset}
+                                            onSelectPreset={setSelectedPreset}
                                         />
                                         <div className="flex items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
                                             <Button

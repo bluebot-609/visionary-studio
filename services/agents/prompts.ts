@@ -71,6 +71,13 @@ Analyze thoroughly, extracting every meaningful detail from both sources. When b
     - Determine brand tier: 'luxury' (ultra-premium, exclusive), 'premium' (high-quality, aspirational), 'mid-tier' (quality focus, accessible), 'mass-market' (broad appeal, value), or 'undetermined' (insufficient signals)
     - Suggest visual identity based on category and tier (e.g., "Fashion Luxury", "Tech Premium", "Beauty Luxury")
 
+12. Recommended photography presets
+    - Based on the product analysis above, recommend the top 3 most suitable photography aesthetic presets
+    - Consider: product category, brand tier, target audience, recommended mood/aesthetic, luxury indicators
+    - Available preset IDs: 'minimalist-clean', 'dark-moody', 'bright-airy', 'lifestyle-contextual', 'monochromatic', 'high-key-white-studio', 'textured-layered', 'gradient-modern', 'editorial-conceptual'
+    - Return an array of exactly 3 preset IDs in order of suitability (most suitable first)
+    - Match presets to product characteristics: e.g., luxury products → 'dark-moody' or 'editorial-conceptual'; e-commerce → 'minimalist-clean' or 'high-key-white-studio'; lifestyle → 'lifestyle-contextual' or 'bright-airy'
+
 Provide a structured, comprehensive analysis that will help creative teams make informed decisions about how to photograph and present this product.`;
 
 export const CREATIVE_DIRECTOR_PROMPT = `You are a world-class creative director with decades of experience in advertising and marketing.
@@ -217,6 +224,18 @@ If luxury/premium positioning is detected, apply luxury-specific technical consi
 
 - Space discipline: whitespace-driven composition
 
+**CRITICAL: MODEL REALISM REQUIREMENTS (if model is present):**
+
+When a model is required, you MUST specify settings that ensure photorealistic, natural human appearance:
+
+- **realismLevel:** MUST be "Photorealistic" or "Hyperrealistic" - never lower
+- **skinTexture:** MUST be "Natural" or "Detailed Pores" - avoid "Smooth & Airbrushed" which looks AI-generated. Natural skin texture with realistic imperfections is REQUIRED.
+- **hairDetail:** MUST be "Natural Flow" or "Sharp Individual Strands" - realistic hair detail is essential for authenticity
+- **Lighting:** Ensure lighting setup creates realistic skin interaction - highlights, shadows, and natural subsurface scattering
+- **Camera Settings:** Use appropriate depth of field to show realistic skin texture and natural details
+
+The goal is REAL PEOPLE, not AI-generated or synthetic appearance. Natural imperfections, realistic skin texture, and authentic human characteristics are REQUIRED.
+
 Provide detailed, professional specifications that will produce exceptional commercial photography.`;
 
 export const MASTER_PROMPT_TEMPLATE = (productAnalysis: any, creativeDirection: any, photographerSpecs: any): string => {
@@ -279,8 +298,19 @@ ${creativeDirection.modelRequired ? `- **Model:** ${creativeDirection.modelType 
 ${creativeDirection.productInteraction ? `- **Product-Model Spatial Relationship:** ${creativeDirection.productInteraction}` : ''}` : ''}
 
 #### **4. Critical Realism Details**
-${photographerSpecs.skinTexture ? `- **Skin Texture:** Pay extreme attention to realism. Skin must have a "${photographerSpecs.skinTexture}" texture.` : ''}
-${photographerSpecs.hairDetail ? `- **Hair Detail:** Hair must show "${photographerSpecs.hairDetail}" detail.` : ''}
+${creativeDirection.modelRequired ? `
+**MANDATORY MODEL REALISM REQUIREMENTS:**
+- **Photorealistic Human Appearance:** The model must look like a REAL PERSON, not AI-generated or synthetic
+- **Natural Skin:** ${photographerSpecs.skinTexture ? `Skin texture: "${photographerSpecs.skinTexture}"` : 'Natural skin texture with subtle imperfections, realistic pores, and natural color variation. Avoid overly smooth, plastic, or airbrushed appearances.'}
+- **Realistic Hair:** ${photographerSpecs.hairDetail ? `Hair detail: "${photographerSpecs.hairDetail}"` : 'Natural hair with individual strands, realistic movement, and authentic texture. Natural highlights and shadows.'}
+- **Natural Poses:** Poses must be natural and human-like, not stiff or robotic. Natural weight distribution and body language.
+- **Realistic Expressions:** Subtle, nuanced facial expressions that look authentic, not exaggerated or fake.
+- **Natural Proportions:** Realistic body proportions - avoid exaggerated or unnatural features.
+- **Realistic Hands:** Proper finger proportions, natural positioning, no extra or missing fingers.
+- **Natural Lighting on Skin:** Realistic light interaction with skin - highlights, shadows, subsurface scattering. Avoid flat, uniform lighting.
+- **Avoid AI Artifacts:** NO extra fingers, distorted features, unrealistic smoothness, or "uncanny valley" characteristics.
+- **Realistic Details:** Subtle imperfections, natural skin variation, realistic hair behavior, authentic human characteristics.
+` : ''}
 ${photographerSpecs.manipulationStyle && photographerSpecs.manipulationStyle !== 'None' ? `- **Manipulation Style:** Apply a "${photographerSpecs.manipulationStyle}" style.` : ''}
 
 #### **5. Color & Visual Elements**

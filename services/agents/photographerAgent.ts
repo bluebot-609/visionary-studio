@@ -156,7 +156,10 @@ ${isLuxury ? 'Include luxuryConsiderations object with applyLuxuryLogic, visualI
   });
 
   try {
-    const jsonText = response.text.trim();
+    const jsonText = response.text?.trim() || '';
+    if (!jsonText) {
+      throw new Error("Empty response from Photographer Agent");
+    }
     const result = JSON.parse(jsonText);
     return result as PhotographerSpecification;
   } catch (e) {

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateConceptsForSelection } from '../../../../services/adCreativeOrchestrator';
-import type { AdCreativeRequest } from '../../../../types';
+import type { AdCreativeRequest, ProductAnalysisResult } from '../../../../types';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json() as AdCreativeRequest;
+    const body = await request.json() as AdCreativeRequest & {
+      existingProductAnalysis?: ProductAnalysisResult;
+    };
 
     if (!body.imageFile && !body.textDescription) {
       return NextResponse.json(
@@ -14,7 +16,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the orchestrator function (without onProgress callback for API route)
-    const result = await generateConceptsForSelection(body);
+    // Pass existing product analysis if provided to avoid re-analyzing
+    const result = await generateConceptsForSelection(
+      body,
+      body.existingProductAnalysis
+    );
 
     return NextResponse.json(result);
   } catch (error) {

@@ -30,6 +30,40 @@ const PROMPT_ARCHITECT_SYSTEM_PROMPT = `You are a world-class prompt artist and 
     - Good: "The luxury watch adorns the model's wrist, positioned prominently in the foreground as they..."
     - Bad: "A model stands in ethereal lighting with soft shadows..." (where's the product?)
 
+**CRITICAL: MODEL REALISM REQUIREMENTS (if model is present):**
+
+1. **PHOTOREALISTIC HUMAN APPEARANCE:**
+   - Models must look like REAL PEOPLE, not AI-generated or synthetic
+   - Natural skin texture with subtle imperfections, pores, and realistic skin variation
+   - Avoid overly smooth, plastic, or airbrushed appearances that scream "AI-generated"
+   - Natural skin tones with realistic color variation and subtle blemishes or freckles
+   - Realistic hair with individual strands, natural movement, and authentic texture
+   - Natural body proportions - avoid exaggerated or unnatural features
+   - Realistic hands with proper finger proportions and natural positioning
+
+2. **NATURAL POSES AND EXPRESSIONS:**
+   - Poses must look natural and human, not stiff or robotic
+   - Avoid symmetrical poses that look too perfect or staged
+   - Natural weight distribution and body language
+   - Realistic facial expressions - subtle, nuanced, not exaggerated
+   - Natural eye contact or gaze direction
+   - Avoid "uncanny valley" characteristics
+
+3. **REALISTIC LIGHTING ON MODELS:**
+   - Skin should show natural light interaction - highlights, shadows, and transitions
+   - Realistic subsurface scattering on skin (light penetrating skin slightly)
+   - Natural shadow casting from body parts
+   - Avoid flat, uniform lighting that makes models look fake
+   - Realistic hair highlights and shadows
+
+4. **AVOID AI ARTIFACTS:**
+   - NO extra fingers, missing fingers, or distorted hands
+   - NO floating objects or impossible physics
+   - NO distorted facial features or unnatural proportions
+   - NO overly perfect symmetry
+   - NO unrealistic skin smoothness or plastic appearance
+   - NO unnatural hair behavior or impossible hair physics
+
 **COMPOSITION RULES:**
 
 1.  Write a single, flowing descriptive paragraph. Do NOT use bullet points, lists, or technical labels (like 'Aperture:').
@@ -39,6 +73,8 @@ const PROMPT_ARCHITECT_SYSTEM_PROMPT = `You are a world-class prompt artist and 
 3.  Focus on **product placement FIRST, then light, shadow, texture, and mood**. Use evocative language.
 
 4.  Descriptively incorporate camera and lighting specs WITHOUT using literal studio equipment terms.
+
+5.  When describing models, ALWAYS emphasize photorealistic, natural human appearance with realistic details.
 
 **LIGHTING TRANSLATION RULES - Avoid Studio Equipment Appearing:**
 
@@ -95,15 +131,26 @@ ${technicalPrompt}
 `;
 
   // 3. Call the LLM to perform the translation
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash', // Use 'gemini-2.5-pro' for more creative nuance
-    contents: finalMetaPrompt,
-    config: {
-      responseMimeType: "text/plain", // We just want the raw text paragraph
-      temperature: 0.5,
-    }
-  });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash', // Use 'gemini-2.5-pro' for more creative nuance
+      contents: finalMetaPrompt,
+      config: {
+        responseMimeType: "text/plain", // We just want the raw text paragraph
+        temperature: 0.5,
+      }
+    });
 
-  return response.text.trim();
+    const text = response.text?.trim() || '';
+    if (!text) {
+      console.error("Prompt Architect Agent: Empty or undefined response", { response });
+      throw new Error("Empty response from Prompt Architect Agent - no text content received");
+    }
+    
+    return text;
+  } catch (error) {
+    console.error("Prompt Architect Agent error:", error);
+    throw new Error(`Failed to translate specs to artistic prompt: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
 

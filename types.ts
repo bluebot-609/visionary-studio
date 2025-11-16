@@ -129,6 +129,7 @@ export interface ProductAnalysisResult {
   brandTier?: 'luxury' | 'premium' | 'mid-tier' | 'mass-market' | 'undetermined';
   luxuryIndicators?: string[];
   visualIdentity?: string; // e.g., 'Fashion Luxury', 'Tech Premium', 'Beauty Luxury', etc.
+  recommendedPresets?: string[]; // Array of preset IDs, top 3 most suitable
 }
 
 export interface LuxuryVisualGuidelines {
@@ -207,7 +208,7 @@ export interface AdCreativeRequest {
   textDescription?: string;
   platformPreference?: string; // Optional override
   selectedConcept?: AdConcept; // User-selected concept
-  userPreferences?: UserPreferences; // User preferences
+  selectedPreset?: string; // Preset ID
   aspectRatio?: '1:1' | '3:4' | '9:16' | '16:9'; // Explicit aspect ratio override
 }
 

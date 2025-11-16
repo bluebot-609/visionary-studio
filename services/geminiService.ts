@@ -58,6 +58,17 @@ The reference image contains a PRODUCT that is the core subject of this ad creat
 - ❌ Overall mood and aesthetic
 - ❌ Camera angle and perspective
 
+**CRITICAL: MODEL REALISM (if model is present):**
+- Models must look like REAL PEOPLE, not AI-generated
+- Natural skin texture with realistic imperfections and pores
+- Realistic hair with individual strands and natural movement
+- Natural poses and expressions - avoid stiff or robotic appearance
+- Realistic body proportions and natural weight distribution
+- Proper hand anatomy - no extra or missing fingers
+- Natural lighting on skin with realistic highlights and shadows
+- Avoid "uncanny valley" characteristics or overly perfect features
+- Subtle imperfections and natural human details are REQUIRED
+
 **MANDATORY ASPECT RATIO REQUIREMENT:**
 - The output image MUST have an aspect ratio of EXACTLY ${aspectRatio} (${aspectRatioDescription})
 - If aspect ratio changes, extend or adjust the SCENE and BACKGROUND, but keep the product itself intact

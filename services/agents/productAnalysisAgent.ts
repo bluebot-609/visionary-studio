@@ -100,7 +100,8 @@ Analyze the provided image to extract comprehensive product information includin
           recommendedAesthetic: { type: Type.STRING },
           brandTier: { type: Type.STRING },
           luxuryIndicators: { type: Type.ARRAY, items: { type: Type.STRING } },
-          visualIdentity: { type: Type.STRING }
+          visualIdentity: { type: Type.STRING },
+          recommendedPresets: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
         required: ['productCategory', 'productAttributes', 'targetAudience', 'keySellingPoints', 'productType']
       }
@@ -108,7 +109,10 @@ Analyze the provided image to extract comprehensive product information includin
   });
 
   try {
-    const jsonText = response.text.trim();
+    const jsonText = response.text?.trim() || '';
+    if (!jsonText) {
+      throw new Error("Empty response from Product Analysis Agent");
+    }
     const result = JSON.parse(jsonText);
     return result as ProductAnalysisResult;
   } catch (e) {
