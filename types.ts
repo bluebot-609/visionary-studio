@@ -256,3 +256,23 @@ export interface ReferenceImageRefinements {
   lightingIntensity?: 'subtle' | 'moderate' | 'strong'; // Optional lighting adjustment
   faceReplacement?: boolean; // Whether to replace model face
 }
+
+// --- Simplified Reference Project Types ---
+
+export interface ImageData {
+  mimeType: string;
+  data: string; // base64
+}
+
+export interface CreativeConcept {
+  title: string;
+  scene_description: string;
+  lighting: string;
+  product_arrangement: string;
+  mood: string;
+}
+
+export interface GeneratedContent {
+  image: string; // base64
+  description: string;
+}
