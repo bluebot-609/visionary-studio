@@ -1,23 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { ProductAnalysisResult, CreativeDirectorDecision, AdConcept, UserPreferences } from '../../types';
+import type { ProductAnalysisResult, CreativeDirectorDecision, AdConcept } from '../../types';
 import { CREATIVE_DIRECTOR_PROMPT, LUXURY_VISUAL_INTELLIGENCE_PROMPT } from './prompts';
 import { evaluateLuxuryAlignment, getLVIRecommendations, getVisualIdentity } from './luxuryVisualIntelligence';
+import { getPresetById } from '../presets';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Generate multiple concepts for user selection
 export const generateConcepts = async (
   productAnalysis: ProductAnalysisResult,
-  platformPreference?: string,
-  userPreferences?: UserPreferences
+  platformPreference?: string
 ): Promise<AdConcept[]> => {
-  const preferencesNote = userPreferences ? `
-User Preferences:
-${userPreferences.modelPreference && userPreferences.modelPreference !== 'let-ai-decide' ? `- Model Preference: ${userPreferences.modelPreference}` : ''}
-${userPreferences.aestheticStyle && userPreferences.aestheticStyle !== 'let-ai-decide' ? `- Aesthetic Style: ${userPreferences.aestheticStyle}` : ''}
-${userPreferences.styleDirection && userPreferences.styleDirection !== 'let-ai-decide' ? `- Style Direction: ${userPreferences.styleDirection}` : ''}
-` : '';
-
   const prompt = `You are a world-class creative director with decades of experience in advertising and marketing. Based on the product analysis provided, use your expertise to generate 3 distinct, compelling ad concepts that would work best for this specific product.
 
 IMPORTANT: Do not limit yourself to predefined concept types. Analyze the product deeply and create concepts that:
@@ -37,8 +30,6 @@ IMPORTANT: Do not limit yourself to predefined concept types. Analyze the produc
 -   **Good Example:** "A man sits on the floor in a single, dramatic shaft of warm sunlight, casting a long shadow. The mood is introspective and minimal."
 
 -   **Bad Example:** "A model in a red shirt."
-
-${preferencesNote}
 
 Product Analysis:
 - Category: ${productAnalysis.productCategory}
@@ -125,7 +116,10 @@ Return as JSON array.`;
   });
 
   try {
-    const jsonText = response.text.trim();
+    const jsonText = response.text?.trim() || '';
+    if (!jsonText) {
+      throw new Error("Empty response from AI");
+    }
     const concepts = JSON.parse(jsonText) as any[];
     return concepts.map((concept, index) => ({
       ...concept,
@@ -140,7 +134,8 @@ Return as JSON array.`;
 export const getCreativeDirection = async (
   productAnalysis: ProductAnalysisResult,
   selectedConcept: AdConcept,
-  platformPreference?: string
+  platformPreference?: string,
+  selectedPreset?: string
 ): Promise<CreativeDirectorDecision> => {
   const isLuxury = evaluateLuxuryAlignment(productAnalysis);
   const lviRecommendations = isLuxury ? getLVIRecommendations(
@@ -149,7 +144,68 @@ export const getCreativeDirection = async (
     selectedConcept.aesthetic
   ) : null;
 
+  // Load preset data if provided
+  const preset = selectedPreset ? getPresetById(selectedPreset) : undefined;
+
   const prompt = `${CREATIVE_DIRECTOR_PROMPT}
+
+${preset ? `
+=== PRESET AESTHETIC DIRECTION ===
+The user has selected the "${preset.name}" aesthetic preset. This preset defines the overall creative direction:
+
+**Aesthetic Overview:**
+- Target Mood: ${preset.mood}
+- Lighting Approach: ${preset.lighting}
+- Background Style: ${preset.background}
+- Best Suited For: ${preset.bestFor.join(', ')}
+
+**CRITICAL: PRODUCT PLACEMENT GUIDELINES**
+Follow these specific placement principles for the "${preset.name}" aesthetic:
+${preset.placementGuidelines}
+
+**CRITICAL: MODEL POSE GUIDELINES**
+If a model is required, follow these specific pose principles for the "${preset.name}" aesthetic:
+${preset.poseGuidelines}
+
+${preset.propGuidance ? `
+**PROP & SURROUNDING INTERACTION GUIDANCE**
+- Allowed: ${preset.propGuidance.allowed ? 'Yes - recommended within this preset' : 'No - keep scene prop-free unless functionality demands it'}
+- Philosophy: ${preset.propGuidance.philosophy}
+- Guidelines: ${preset.propGuidance.guidelines}
+- Suggested Props: ${preset.propGuidance.suggestedProps?.join(', ') || 'None'}
+- Abstract-Friendly: ${preset.propGuidance.abstractFriendly ? 'Yes, conceptual or geometric props may be used when aligned with the story.' : 'No, keep props literal or omit them entirely.'}
+
+If props are allowed, determine SPECIFIC supporting props for this product, aligning with the preset philosophy. If props are discouraged, explain why and disable them.
+` : ''}
+
+**YOUR TASK:**
+Analyze the product, selected concept, and this preset's detailed guidelines. Then make intelligent creative decisions that:
+
+1. **Product Placement**: Apply the preset's placement guidelines intelligently:
+   - Interpret the placement philosophy (e.g., "rule-of-thirds", "centered", "asymmetrical")
+   - Determine the EXACT positioning that serves THIS specific product's features and category
+   - Consider the product's size, shape, and key selling points when applying placement rules
+   - Specify precise composition details (e.g., "product positioned on left third, angled 15 degrees toward camera")
+
+2. **Model Poses** (if model required): Apply the preset's pose guidelines intelligently:
+   - Interpret the pose style (e.g., "neutral and composed", "dramatic and relaxed", "action-oriented")
+   - Determine the EXACT pose that serves THIS product and concept
+   - Specify precise pose details (e.g., "model standing straight, facing camera, holding product at chest height with open palms")
+   - Ensure product visibility and prominence while following preset pose style
+
+3. **Integration**: Ensure placement and poses work together:
+   - Product placement and model pose should complement each other
+   - Spatial relationship between product and model should be clearly defined
+   - Both should serve the preset's aesthetic direction while highlighting the product
+
+4. **Tailoring**: Adapt preset guidelines to product specifics:
+   - If preset suggests "centered placement" → determine exact center positioning for THIS product's dimensions
+   - If preset suggests "rule-of-thirds" → specify which third and why it serves this product
+   - If preset suggests "asymmetrical" → determine the specific asymmetry that creates visual interest for THIS product
+   - If preset suggests specific poses → adapt them to show THIS product's features effectively
+
+**IMPORTANT**: Use the preset guidelines as your foundation, but create SPECIFIC, DETAILED decisions tailored to this exact product. The preset provides the aesthetic direction; you provide the intelligent, product-specific implementation with precise placement and pose specifications.
+` : ''}
 
 ${isLuxury ? `
 === LUXURY VISUAL INTELLIGENCE (LVI) ===
@@ -193,8 +249,51 @@ LVI Recommendations to integrate:
 - Space Use: ${lviRecommendations.spaceUse}
 ` : ''}
 
+${selectedConcept.modelRequired ? `
+**CRITICAL: PRODUCT-MODEL SPATIAL RELATIONSHIP**
+Since this concept requires a model, you MUST define how the product and model interact spatially:
+${preset ? `
+**PRESET POSE & PLACEMENT GUIDANCE:**
+The "${preset.name}" preset provides specific guidelines for model poses and product placement. Apply these guidelines when defining the spatial relationship:
+- Placement: ${preset.placementGuidelines}
+- Poses: ${preset.poseGuidelines}
+
+Use these preset guidelines as your foundation, but adapt them specifically for this product and concept.
+` : ''}
+- Provide clear "productInteraction" guidance describing WHERE and HOW the product appears relative to the model
+- Provide clear "poseGuidance" that follows the preset's pose style (if preset selected) or creates an appropriate pose for this product
+- Examples of productInteraction:
+  * "Model holds the perfume bottle at chest level, prominently displayed in their hand"
+  * "Watch is worn on model's wrist, positioned prominently in the foreground"
+  * "Perfume bottle sits on a table in the foreground while model gazes at it from behind"
+  * "Model cradles the product delicately in both hands at center frame"
+  * "Product is placed on a surface in the foreground, with model slightly out of focus in the background"
+- The product MUST remain visible and prominent - never obscured by the model or background
+- Consider the product category: wearables (watches, jewelry) = on model; perfumes/cosmetics = held or displayed; larger items = placed near model
+${preset ? `
+- Ensure the poseGuidance aligns with the preset's pose style: ${preset.poseGuidelines}
+- Ensure the productInteraction aligns with the preset's placement approach: ${preset.placementGuidelines}
+` : ''}
+` : ''}
+
+**SUPPORTING PROPS REQUIREMENT**
+- Always include a "supportingProps" object in your JSON response.
+- If props enhance this preset/concept, set enabled=true and describe the strategy, provide 3-4 propIdeas, note interaction guidance, and specify whether it should feel "abstract", "literal", or "minimal".
+- If props should be avoided, set enabled=false with a short rationale in the strategy field.
+
+${selectedConcept.modelRequired ? `
+**MODEL EXPRESSION & EMOTIONAL TRANSLATION**
+- Map the campaign mood into a precise emotional cue for the model.
+- Provide micro-expression notes (eyes, mouth, brows) that keep the model human and alive.
+- Define body language cues that reinforce the mood (weight shift, tension vs relaxation, gesture dynamics).
+- Specify gaze direction or focus to anchor the viewer connection.
+- Note the overall energy level ('serene', 'magnetic', 'playful', 'commanding', etc.).
+- Return this in an "expressionGuidance" object so downstream agents and prompts preserve believable emotional nuance.
+` : ''}
+
 Based on the selected concept, make final strategic creative decisions (platform, location, color palette, composition, aspect ratio) and provide your recommendations in JSON format.
-${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables when applicable.' : ''}`;
+${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables when applicable.' : ''}
+${selectedConcept.modelRequired ? 'IMPORTANT: Include productInteraction field with clear spatial guidance for product-model relationship.' : ''}`;
 
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -211,6 +310,7 @@ ${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables
           modelType: { type: Type.STRING },
           modelCount: { type: Type.NUMBER },
           poseGuidance: { type: Type.STRING },
+          productInteraction: { type: Type.STRING },
           presentationStyle: { type: Type.STRING },
           mood: { type: Type.STRING },
           colorPalette: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -225,6 +325,26 @@ ${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables
               colorEmotion: { type: Type.STRING },
               spaceUse: { type: Type.STRING }
             }
+          },
+          supportingProps: {
+            type: Type.OBJECT,
+            properties: {
+              enabled: { type: Type.BOOLEAN },
+              strategy: { type: Type.STRING },
+              propIdeas: { type: Type.ARRAY, items: { type: Type.STRING } },
+              interactionNotes: { type: Type.STRING },
+              abstractionLevel: { type: Type.STRING }
+            }
+          },
+          expressionGuidance: {
+            type: Type.OBJECT,
+            properties: {
+              emotion: { type: Type.STRING },
+              facialExpression: { type: Type.STRING },
+              bodyLanguage: { type: Type.STRING },
+              gazeDirection: { type: Type.STRING },
+              energyLevel: { type: Type.STRING }
+            }
           }
         },
         required: ['adType', 'platformRecommendation', 'location', 'modelRequired', 'presentationStyle', 'mood', 'colorPalette', 'compositionApproach', 'aspectRatio']
@@ -233,7 +353,10 @@ ${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables
   });
 
   try {
-    const jsonText = response.text.trim();
+    const jsonText = response.text?.trim() || '';
+    if (!jsonText) {
+      throw new Error("Empty response from AI");
+    }
     const result = JSON.parse(jsonText);
     // Merge selected concept details into the decision
     return {

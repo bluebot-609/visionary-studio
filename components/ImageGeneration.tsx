@@ -1,9 +1,25 @@
-import React, { useState, useCallback } from 'react';
-import type { UploadedFile, GeneratedImage, SeductiveCaptions, AdConcept, UserPreferences, ProductAnalysisResult } from '../types';
-import { generateConceptsForSelection, orchestrateAdCreation } from '../services/adCreativeOrchestrator';
-import { generateCaptions } from '../services/geminiService';
+'use client';
+
+import React, { useState, useCallback, useMemo } from 'react';
+import type { UploadedFile, GeneratedImage, SeductiveCaptions, AdConcept, ProductAnalysisResult, ReferenceStyleAnalysis, ReferenceImageRefinements } from '../types';
+import { analyzeProductForPresets, generateConceptsForSelection, orchestrateAdCreation, generateCaptions, analyzeReferenceStyle, generateFromReference } from '../services/aiClient';
+import { saveShot } from '../services/shotLibrary';
+import { ALL_PRESETS } from '../services/presets';
 import Modal from './Modal';
-import { UploadCloudIcon, StarsIcon, DownloadIcon, SlidersHorizontalIcon, CopyIcon, CheckIcon } from '../icons';
+import { DownloadIcon, StarsIcon, SlidersHorizontalIcon } from '../icons';
+import { Card } from './ui/card';
+import { Button } from './ui/button';
+import {
+  Stepper,
+  LiquidFillLoader,
+  ImageUpload,
+  ConceptSelection,
+  ImageResults,
+  PresetSelection,
+  ModeSelector,
+  ReferenceImageUpload,
+  ReferenceSettings,
+} from './image-generation';
 
 const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -13,307 +29,69 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.onerror = (error) => reject(error);
   });
 
-// --- SUB-COMPONENTS ---
-
-const InputSection: React.FC<{
-    onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    uploadedFile: UploadedFile | null;
-    onRemoveFile: () => void;
-    textDescription: string;
-    onTextChange: (text: string) => void;
-}> = ({ onFileChange, uploadedFile, onRemoveFile, textDescription, onTextChange }) => {
-        return (
-        <div className="space-y-6">
-            <div className="text-center bg-[#1a1a1a] p-8 rounded-xl border border-slate-800 shadow-sm">
-                <h2 className="text-2xl font-bold text-gray-100 mb-4">What would you like to create?</h2>
-                <p className="text-gray-400 mb-6">Provide an image, text description, or both</p>
-                
-                <div className="space-y-4">
-                    <div>
-                        <label htmlFor="text-description" className="block text-sm font-medium text-gray-400 mb-2 text-left">
-                            Product Description (Optional)
-                        </label>
-                        <textarea
-                            id="text-description"
-                            value={textDescription}
-                            onChange={(e) => onTextChange(e.target.value)}
-                            placeholder="Describe the product or scene you want to create..."
-                            rows={3}
-                            className="w-full bg-slate-800 border border-slate-600 rounded-md p-3 text-gray-200 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition placeholder:text-gray-500"
-                        />
-                    </div>
-
-                    {uploadedFile ? (
-                        <div className="text-center bg-slate-800 p-6 rounded-xl border border-slate-700">
-                            <h3 className="text-lg font-bold text-gray-100 mb-4">Reference Image</h3>
-                <div className="relative inline-block">
-                    <img 
-                        src={`data:${uploadedFile.type};base64,${uploadedFile.base64}`} 
-                        alt="Uploaded preview" 
-                        className="max-h-64 w-auto mx-auto rounded-lg shadow-lg"
-                    />
-                    <button 
-                        onClick={onRemoveFile} 
-                        className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1.5 leading-none hover:bg-red-700 transition-colors shadow-md"
-                        aria-label="Remove image"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div className="mt-4 flex justify-center items-center gap-4">
-                    <p className="text-sm text-gray-400 truncate max-w-[200px]">{uploadedFile.name}</p>
-                    <label htmlFor="file-upload" className="cursor-pointer text-sm font-semibold text-sky-500 hover:text-sky-400 transition-colors">
-                        Change Image
-                        <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={onFileChange} accept="image/*" />
-                    </label>
-                </div>
-            </div>
-                    ) : (
-                        <div className="text-center bg-slate-800 p-8 rounded-xl border-2 border-dashed border-slate-700 hover:border-sky-500 transition-colors">
-            <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center justify-center">
-                <UploadCloudIcon className="w-12 h-12 mx-auto text-slate-500 mb-4" />
-                                <h3 className="text-lg font-bold text-gray-100 mb-2">Upload Reference Image (Optional)</h3>
-                                <p className="text-gray-400 text-sm">An optional starting point for the AI</p>
-                <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={onFileChange} accept="image/*" />
-            </label>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const PreferencesPanel: React.FC<{
-    preferences: UserPreferences;
-    onPreferencesChange: (prefs: UserPreferences) => void;
-}> = ({ preferences, onPreferencesChange }) => {
-    const updatePreference = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
-        onPreferencesChange({ ...preferences, [key]: value });
-    };
-    
-    return (
-        <div className="bg-[#1a1a1a] p-6 rounded-xl border border-slate-800 shadow-sm">
-            <h3 className="text-xl font-bold text-gray-100 mb-4">Personalize Your Ad (Optional)</h3>
-            <p className="text-sm text-gray-400 mb-4">These preferences guide the AI - you can still choose from generated concepts</p>
-            
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Model Presence</label>
-                        <select
-                        value={preferences.modelPreference || 'let-ai-decide'}
-                        onChange={(e) => updatePreference('modelPreference', e.target.value as UserPreferences['modelPreference'])}
-                            className="w-full bg-slate-800 border border-slate-600 rounded-md p-2 text-gray-200 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
-                        >
-                        <option value="let-ai-decide">Let AI Decide</option>
-                        <option value="with-model">With Model/Person</option>
-                        <option value="product-only">Product Only</option>
-                        <option value="hybrid">Hybrid (Hands/Partial)</option>
-                        </select>
-                    </div>
-
-                 <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Aesthetic Style</label>
-                    <select
-                        value={preferences.aestheticStyle || 'let-ai-decide'}
-                        onChange={(e) => updatePreference('aestheticStyle', e.target.value as UserPreferences['aestheticStyle'])}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-md p-2 text-gray-200 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
-                    >
-                        <option value="let-ai-decide">Let AI Decide</option>
-                        <option value="luxurious">Luxurious</option>
-                        <option value="minimalist">Minimalist</option>
-                        <option value="energetic">Energetic</option>
-                        <option value="calm">Calm</option>
-                        <option value="mysterious">Mysterious</option>
-                        <option value="joyful">Joyful</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Style Direction</label>
-                    <select
-                        value={preferences.styleDirection || 'let-ai-decide'}
-                        onChange={(e) => updatePreference('styleDirection', e.target.value as UserPreferences['styleDirection'])}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-md p-2 text-gray-200 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition"
-                    >
-                        <option value="let-ai-decide">Let AI Decide</option>
-                        <option value="modern">Modern</option>
-                        <option value="classic">Classic</option>
-                        <option value="edgy">Edgy</option>
-                        <option value="soft">Soft</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const ConceptSelection: React.FC<{
-    concepts: AdConcept[];
-    selectedConcept: AdConcept | null;
-    onSelectConcept: (concept: AdConcept) => void;
-}> = ({ concepts, selectedConcept, onSelectConcept }) => {
-    return (
-        <div className="space-y-6">
-            <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-100 mb-2">Choose Your Ad Concept</h2>
-                <p className="text-gray-400">Select the concept that best matches your vision</p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-4">
-                {concepts.map((concept) => (
-                    <div
-                        key={concept.id}
-                        onClick={() => onSelectConcept(concept)}
-                        className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                            selectedConcept?.id === concept.id
-                                ? 'border-sky-500 bg-sky-500/10'
-                                : 'border-slate-700 bg-[#1a1a1a] hover:border-slate-600'
-                        }`}
-                    >
-                        <div className="flex items-start justify-between mb-3">
-                            <h3 className="text-lg font-bold text-gray-100">{concept.title}</h3>
-                            {selectedConcept?.id === concept.id && (
-                                <div className="w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center">
-                                    <CheckIcon className="w-3 h-3 text-white" />
-                                </div>
-                            )}
-                        </div>
-                        <p className="text-sm text-gray-400 mb-4">{concept.description}</p>
-                        
-                        <div className="space-y-2 text-xs">
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-500">Mood:</span>
-                                <span className="text-gray-300">{concept.mood}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-500">Style:</span>
-                                <span className="text-gray-300">{concept.aesthetic}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-gray-500">Model:</span>
-                                <span className="text-gray-300">{concept.modelRequired ? 'Yes' : 'No'}</span>
-                            </div>
-                        </div>
-                        
-                        <div className="mt-4 p-3 bg-slate-800 rounded-md">
-                            <p className="text-xs text-gray-400 italic">{concept.visualDescription}</p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-const AgentProgressIndicator: React.FC<{ currentStep: string; progress: number }> = ({ currentStep, progress }) => {
-    return (
-        <div className="bg-[#1a1a1a] p-6 rounded-xl border border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-400">{currentStep}</span>
-                <span className="text-sm font-medium text-sky-500">{Math.round(progress)}%</span>
-            </div>
-            <div className="w-full bg-slate-800 rounded-full h-2">
-                <div 
-                    className="bg-gradient-to-r from-sky-500 to-teal-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                />
-            </div>
-        </div>
-    );
-};
-
-const LoadingSpinner: React.FC = () => (
-    <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-sky-500"></div>
-    </div>
-);
-
-const ImageResults: React.FC<{
-    image: GeneratedImage;
-    onGenerateCaptions: (id: string, base64: string) => void;
-    onViewImage: () => void;
-    onEditColor: (image: GeneratedImage) => void;
-}> = ({ image, onGenerateCaptions, onViewImage, onEditColor }) => (
-    <div className="flex justify-center">
-        <div key={image.id} className="group relative rounded-lg overflow-hidden border border-slate-800 aspect-square w-full max-w-lg">
-            <img
-                src={`data:image/jpeg;base64,${image.base64}`}
-                alt={`Generated image`}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                style={{ filter: `hue-rotate(${image.hue}deg) saturate(${image.saturation}%)` }}
-            />
-            <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 gap-2">
-                <button onClick={onViewImage} className="text-white text-sm font-semibold bg-black/50 px-4 py-2 rounded-full hover:bg-sky-500 transition-colors">View</button>
-                <button onClick={() => onGenerateCaptions(image.id, image.base64)} disabled={!!image.captions} className="text-white text-sm font-semibold bg-black/50 px-4 py-2 rounded-full disabled:opacity-50 hover:bg-sky-500 transition-colors">{image.captions ? 'Captions Ready' : 'Get Captions'}</button>
-                <button onClick={() => onEditColor(image)} className="text-white text-sm font-semibold bg-black/50 px-4 py-2 rounded-full flex items-center gap-1 hover:bg-sky-500 transition-colors"><SlidersHorizontalIcon className="w-4 h-4" /> Adjust</button>
-            </div>
-        </div>
-    </div>
-);
-
-const GeneratedPromptDisplay: React.FC<{ prompt: string }> = ({ prompt }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [isCopied, setIsCopied] = useState(false);
-
-    const copyToClipboard = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(prompt).then(() => {
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
-        });
-    };
-
-    return (
-        <div className="bg-[#1a1a1a] p-4 rounded-xl border border-slate-800 shadow-sm mt-4 max-w-lg mx-auto">
-            <div className="flex justify-between items-center cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
-                <h3 className="text-lg font-bold text-gray-200">View Generation Prompt</h3>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6"/></svg>
-            </div>
-            {isExpanded && (
-                <div className="mt-4">
-                    <div className="relative">
-                        <pre className="text-xs text-gray-400 whitespace-pre-wrap bg-slate-800 p-3 rounded-md font-mono max-h-60 overflow-y-auto">
-                            {prompt}
-                        </pre>
-                        <button 
-                            onClick={copyToClipboard}
-                            className="absolute top-2 right-2 p-1.5 bg-slate-700/50 hover:bg-slate-600/50 rounded-md transition-colors"
-                            aria-label="Copy prompt"
-                        >
-                            {isCopied ? 
-                                <CheckIcon className="w-4 h-4 text-green-400" /> : 
-                                <CopyIcon className="w-4 h-4 text-gray-300" />
-                            }
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
 // Main Component
-const ImageGeneration: React.FC = () => {
+interface ImageGenerationProps {
+    userId?: string;
+    onImageSaved?: () => void;
+}
+
+const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved }) => {
     const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
     const [textDescription, setTextDescription] = useState<string>('');
-    const [userPreferences, setUserPreferences] = useState<UserPreferences>({});
     const [concepts, setConcepts] = useState<AdConcept[]>([]);
     const [selectedConcept, setSelectedConcept] = useState<AdConcept | null>(null);
     const [productAnalysis, setProductAnalysis] = useState<ProductAnalysisResult | null>(null);
     const [generatedImage, setGeneratedImage] = useState<GeneratedImage | null>(null);
-    const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isGeneratingConcepts, setIsGeneratingConcepts] = useState(false);
+    const [isAnalyzingProduct, setIsAnalyzingProduct] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentStep, setCurrentStep] = useState<string>('');
     const [progress, setProgress] = useState<number>(0);
+    const [aspectRatio, setAspectRatio] = useState<'1:1' | '3:4' | '9:16' | '16:9'>('1:1');
+    const [wizardStep, setWizardStep] = useState<0 | 1 | 2 | 3>(0);
+    const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+    const [recommendedPresets, setRecommendedPresets] = useState<string[]>([]);
+    
+    // Reference image mode state
+    const [mode, setMode] = useState<'ai-guided' | 'reference-image'>('ai-guided');
+    const [referenceImage, setReferenceImage] = useState<UploadedFile | null>(null);
+    const [referenceNotes, setReferenceNotes] = useState<string>('');
+    const [referenceStyleAnalysis, setReferenceStyleAnalysis] = useState<ReferenceStyleAnalysis | null>(null);
+    const [referenceRefinements, setReferenceRefinements] = useState<ReferenceImageRefinements>({
+      faceReplacement: true,
+    });
+    const [isAnalyzingReference, setIsAnalyzingReference] = useState(false);
     
     const [isViewingImage, setIsViewingImage] = useState<boolean>(false);
     const [editingImage, setEditingImage] = useState<GeneratedImage | null>(null);
     const [tempColorAdjust, setTempColorAdjust] = useState({ hue: 0, saturation: 100 });
+    const [showSaveSuccess, setShowSaveSuccess] = useState<boolean>(false);
+
+    const resetProject = () => {
+        setUploadedFile(null);
+        setTextDescription('');
+        setConcepts([]);
+        setSelectedConcept(null);
+        setProductAnalysis(null);
+        setGeneratedImage(null);
+        setError(null);
+        setCurrentStep('');
+        setProgress(0);
+        setAspectRatio('1:1');
+        setWizardStep(0);
+        setSelectedPreset(null);
+        setRecommendedPresets([]);
+        setMode('ai-guided');
+        setReferenceImage(null);
+        setReferenceNotes('');
+        setReferenceStyleAnalysis(null);
+        setReferenceRefinements({ faceReplacement: true });
+        const fileInput = document.getElementById('file-upload') as HTMLInputElement | null;
+        if (fileInput) fileInput.value = '';
+        const refFileInput = document.getElementById('reference-file-upload') as HTMLInputElement | null;
+        if (refFileInput) refFileInput.value = '';
+    };
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -335,6 +113,94 @@ const ImageGeneration: React.FC = () => {
         }
     };
 
+    const handleReferenceFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const base64 = await fileToBase64(file);
+            setReferenceImage({
+                name: file.name,
+                type: file.type,
+                base64: base64,
+            });
+        }
+    };
+
+    const handleRemoveReferenceFile = () => {
+        setReferenceImage(null);
+        setReferenceStyleAnalysis(null);
+        const fileInput = document.getElementById('reference-file-upload') as HTMLInputElement;
+        if (fileInput) {
+            fileInput.value = '';
+        }
+    };
+
+    const handleAnalyzeReference = async () => {
+        if (!referenceImage) {
+            return;
+        }
+
+        setIsAnalyzingReference(true);
+        setError(null);
+        setCurrentStep('Analyzing reference image...');
+        setProgress(0);
+
+        try {
+            const result = await analyzeReferenceStyle(
+                referenceImage,
+                referenceNotes.trim() || undefined,
+                (step, progressValue) => {
+                    setCurrentStep(step);
+                    setProgress(progressValue);
+                }
+            );
+
+            setReferenceStyleAnalysis(result);
+        } catch (e) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error(e);
+            }
+            setError('Failed to analyze reference image. You can still proceed.');
+        } finally {
+            setIsAnalyzingReference(false);
+            setCurrentStep('');
+            setProgress(0);
+        }
+    };
+
+    const handleAnalyzeProduct = async () => {
+        if (!uploadedFile && !textDescription.trim()) {
+            return; // No analysis needed if no input
+        }
+
+        setIsAnalyzingProduct(true);
+        setError(null);
+        setCurrentStep('Analyzing product...');
+        setProgress(0);
+
+        try {
+            const result = await analyzeProductForPresets(
+                uploadedFile || undefined,
+                textDescription.trim() || undefined,
+                (step, progressValue) => {
+                    setCurrentStep(step);
+                    setProgress(progressValue);
+                }
+            );
+
+            setProductAnalysis(result.productAnalysis);
+            setRecommendedPresets(result.recommendedPresets);
+        } catch (e) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error(e);
+            }
+            setError('Failed to analyze product. You can still proceed with preset selection.');
+        } finally {
+            setIsAnalyzingProduct(false);
+            setCurrentStep('');
+            setProgress(0);
+        }
+    };
+
     const handleGenerateConcepts = async () => {
         if (!uploadedFile && !textDescription.trim()) {
             setError('Please provide either an image or text description (or both).');
@@ -345,7 +211,7 @@ const ImageGeneration: React.FC = () => {
         setError(null);
         setConcepts([]);
         setSelectedConcept(null);
-        setCurrentStep('Analyzing product...');
+        setCurrentStep('Generating concepts...');
         setProgress(0);
 
         try {
@@ -353,21 +219,84 @@ const ImageGeneration: React.FC = () => {
                 {
                     imageFile: uploadedFile || undefined,
                     textDescription: textDescription.trim() || undefined,
-                    userPreferences,
+                    selectedPreset: selectedPreset || undefined,
+                    aspectRatio,
                 },
+                productAnalysis || undefined, // Pass existing analysis to avoid re-analyzing
                 (step, progressValue) => {
                     setCurrentStep(step);
                     setProgress(progressValue);
                 }
             );
 
-            setProductAnalysis(result.productAnalysis);
+            // Update product analysis if it wasn't set before
+            if (!productAnalysis) {
+                setProductAnalysis(result.productAnalysis);
+                setRecommendedPresets(result.recommendedPresets);
+            }
             setConcepts(result.concepts);
+            setWizardStep(2);
         } catch (e) {
-            console.error(e);
-            setError('Failed to generate concepts. Please check the console for details.');
+            if (process.env.NODE_ENV === 'development') {
+                console.error(e);
+            }
+            setError('Failed to generate concepts. Please try again.');
         } finally {
             setIsGeneratingConcepts(false);
+            setCurrentStep('');
+            setProgress(0);
+        }
+    };
+
+    const handleGenerateFromReference = async () => {
+        if (!uploadedFile || !referenceImage || !referenceStyleAnalysis) {
+            setError('Please upload both product and reference images, and analyze the reference first.');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        setGeneratedImage(null);
+        setCurrentStep('Generating image with style transfer...');
+        setProgress(0);
+
+        try {
+            const adCreative = await generateFromReference(
+                uploadedFile,
+                referenceImage,
+                referenceStyleAnalysis,
+                referenceRefinements,
+                aspectRatio,
+                (step, progressValue) => {
+                    setCurrentStep(step);
+                    setProgress(progressValue);
+                }
+            );
+
+            if (!adCreative || !adCreative.base64) {
+                console.error('No base64 data in response', adCreative);
+                throw new Error('Generated image has no base64 data');
+            }
+
+            const newImage: GeneratedImage = {
+                id: adCreative.id,
+                base64: adCreative.base64,
+                captions: null,
+                hue: 0,
+                saturation: 100,
+            };
+
+            console.log('Generated image set', { id: newImage.id, hasBase64: !!newImage.base64 });
+            setGeneratedImage(newImage);
+            setWizardStep(3);
+        } catch (e) {
+            console.error('Error generating from reference:', e);
+            if (process.env.NODE_ENV === 'development') {
+                console.error(e);
+            }
+            setError(e instanceof Error ? e.message : 'Failed to generate image. Please try again.');
+        } finally {
+            setIsLoading(false);
             setCurrentStep('');
             setProgress(0);
         }
@@ -382,7 +311,6 @@ const ImageGeneration: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setGeneratedImage(null);
-        setGeneratedPrompt(null);
         setCurrentStep('Initializing...');
         setProgress(0);
 
@@ -391,8 +319,9 @@ const ImageGeneration: React.FC = () => {
                 {
                     imageFile: uploadedFile || undefined,
                     textDescription: textDescription.trim() || undefined,
-                    userPreferences,
+                    selectedPreset: selectedPreset || undefined,
                     selectedConcept,
+                    aspectRatio,
                 },
                 productAnalysis,
                 selectedConcept,
@@ -409,12 +338,37 @@ const ImageGeneration: React.FC = () => {
                 hue: 0,
                 saturation: 100,
             };
+            
             setGeneratedImage(newImage);
-            setGeneratedPrompt(adCreative.prompt);
+            setWizardStep(3);
+
+            // Save to Shot Library if userId is provided
+            if (userId) {
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('Starting to save shot to library...', { userId, imageId: newImage.id });
+                }
+                try {
+                    await saveShot(userId, newImage);
+                    if (process.env.NODE_ENV === 'development') {
+                        console.log('Shot saved to library successfully');
+                    }
+                    setShowSaveSuccess(true);
+                    setTimeout(() => setShowSaveSuccess(false), 3000);
+                    onImageSaved?.();
+                } catch (saveError) {
+                    if (process.env.NODE_ENV === 'development') {
+                        console.error('Failed to save shot to library:', saveError);
+                    }
+                    setError('Image generated successfully but failed to save to library.');
+                }
+            }
         } catch (e) {
-            console.error(e);
-            setError('Failed to generate image. Please check the console for details.');
+            if (process.env.NODE_ENV === 'development') {
+                console.error(e);
+            }
+            setError('Failed to generate image. Please try again.');
         } finally {
+            // Clear loading states after all operations complete
             setIsLoading(false);
             setCurrentStep('');
             setProgress(0);
@@ -430,7 +384,9 @@ const ImageGeneration: React.FC = () => {
                 );
             }
         } catch (e) {
-            console.error(`Failed to fetch captions for image ${imageId}:`, e);
+            if (process.env.NODE_ENV === 'development') {
+                console.error(`Failed to fetch captions for image ${imageId}:`, e);
+            }
         }
     }, []);
     
@@ -449,129 +405,377 @@ const ImageGeneration: React.FC = () => {
 
     const viewingImage = isViewingImage ? generatedImage : null;
 
+    const canvasAspectStyle = useMemo(() => {
+        const map: Record<typeof aspectRatio, string> = {
+            '1:1': '1 / 1',
+            '3:4': '3 / 4',
+            '9:16': '9 / 16',
+            '16:9': '16 / 9',
+        };
+        return { aspectRatio: map[aspectRatio] };
+    }, [aspectRatio]);
+
     return (
-        <div className="space-y-12">
-            <InputSection 
-                onFileChange={handleFileChange} 
-                uploadedFile={uploadedFile} 
-                onRemoveFile={handleRemoveFile}
-                textDescription={textDescription}
-                onTextChange={setTextDescription}
-            />
-
-            <PreferencesPanel 
-                preferences={userPreferences}
-                onPreferencesChange={setUserPreferences}
-            />
-            
-            <div className="text-center">
-                <button
-                    onClick={handleGenerateConcepts}
-                    disabled={isGeneratingConcepts || (!uploadedFile && !textDescription.trim())}
-                    className="bg-sky-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-sky-600 hover:scale-105 transform transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-                >
-                    {isGeneratingConcepts ? 'Generating Concepts...' : 'Generate Concepts'}
-                    <StarsIcon className="w-5 h-5"/>
-                </button>
-            </div>
-            
-            {isGeneratingConcepts && currentStep && (
-                <AgentProgressIndicator currentStep={currentStep} progress={progress} />
-            )}
-            
-            {concepts.length > 0 && (
-                <ConceptSelection 
-                    concepts={concepts}
-                    selectedConcept={selectedConcept}
-                    onSelectConcept={setSelectedConcept}
-                />
-            )}
-
-            {selectedConcept && (
-                <div className="text-center">
-                    <button
-                        onClick={handleGenerateFinal}
-                        disabled={isLoading}
-                        className="bg-teal-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:bg-teal-600 hover:scale-105 transform transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-                    >
-                        {isLoading ? 'Generating...' : 'Generate Final Ad Creative'}
-                        <StarsIcon className="w-5 h-5"/>
-                    </button>
+        <div className="relative">
+            <Card className="relative mx-auto flex w-full max-w-5xl flex-col rounded-[24px] md:rounded-[32px] border-white/10 bg-black/35 p-0 overflow-hidden max-h-[90vh]">
+                <div className="flex-shrink-0 flex items-center justify-between border-b border-white/5 px-4 py-4 md:px-8 md:py-6">
+                    <div className="flex items-center gap-2 md:gap-3">
+                        <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-white/[0.06] text-xs md:text-sm font-semibold">
+                            VS
+                        </div>
+                        <button
+                            onClick={resetProject}
+                            className="rounded-full border border-white/10 px-2 py-1 md:px-3 text-[10px] md:text-xs font-semibold uppercase tracking-[0.25em] md:tracking-[0.35em] text-white/70 hover:border-white/30 hover:bg-white/[0.06]"
+                        >
+                            New Project
+                        </button>
+                    </div>
+                    <Stepper current={wizardStep} />
                 </div>
-            )}
 
-            {isLoading && currentStep && (
-                <AgentProgressIndicator currentStep={currentStep} progress={progress} />
-            )}
-            {error && <p className="text-center text-red-500">{error}</p>}
-            
-            {generatedImage && (
-                <div>
-                    <ImageResults 
-                        image={generatedImage} 
-                        onGenerateCaptions={fetchCaptions}
-                        onViewImage={() => setIsViewingImage(true)}
-                        onEditColor={handleOpenColorEditor}
-                    />
-                    {generatedPrompt && <GeneratedPromptDisplay prompt={generatedPrompt} />}
+                <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8">
+                    <div className="mx-auto w-full max-w-4xl">
+                        {/* Content area */}
+                        <div className="relative w-full">
+                            <div className="relative">
+                                {/* Liquid fill loading indicator */}
+                                <LiquidFillLoader
+                                    visible={(isAnalyzingProduct || isAnalyzingReference || isGeneratingConcepts || isLoading) && !!currentStep}
+                                    currentStep={currentStep || 'Processing...'}
+                                    progress={progress}
+                                />
+                                {/* Step 1: Input (Image + Brief) */}
+                                {wizardStep === 0 && (
+                                    <div className="space-y-4 md:space-y-6">
+                                        <ModeSelector
+                                            mode={mode}
+                                            onModeChange={setMode}
+                                        />
+                                        
+                                        <ImageUpload
+                                            onFileChange={handleFileChange}
+                                            uploadedFile={uploadedFile}
+                                            onRemoveFile={handleRemoveFile}
+                                            textDescription={textDescription}
+                                            onTextChange={setTextDescription}
+                                        />
+
+                                        {mode === 'reference-image' && (
+                                            <ReferenceImageUpload
+                                                onFileChange={handleReferenceFileChange}
+                                                uploadedFile={referenceImage}
+                                                onRemoveFile={handleRemoveReferenceFile}
+                                                referenceNotes={referenceNotes}
+                                                onNotesChange={setReferenceNotes}
+                                            />
+                                        )}
+
+                                        <div className="flex items-center justify-end gap-2 md:gap-3 pt-4 border-t border-white/5">
+                                            <Button
+                                                variant="secondary"
+                                                onClick={resetProject}
+                                                className="rounded-full text-xs md:text-sm px-3 md:px-4"
+                                            >
+                                                Reset
+                                            </Button>
+                                            {mode === 'ai-guided' ? (
+                                                <Button
+                                                    size="lg"
+                                                    onClick={async () => {
+                                                        // Trigger product analysis when moving to Step 1
+                                                        if (uploadedFile || textDescription.trim()) {
+                                                            await handleAnalyzeProduct();
+                                                        }
+                                                        setWizardStep(1);
+                                                    }}
+                                                    disabled={isAnalyzingProduct || (!uploadedFile && !textDescription.trim())}
+                                                    className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
+                                                >
+                                                    {isAnalyzingProduct ? 'Analyzing...' : 'Next'}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="lg"
+                                                    onClick={async () => {
+                                                        // Analyze reference image when moving to Step 1
+                                                        if (referenceImage) {
+                                                            await handleAnalyzeReference();
+                                                        }
+                                                        setWizardStep(1);
+                                                    }}
+                                                    disabled={isAnalyzingReference || !uploadedFile || !referenceImage}
+                                                    className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
+                                                >
+                                                    {isAnalyzingReference ? 'Analyzing...' : 'Next'}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 2: Aspect ratio + Optional controls */}
+                                {wizardStep === 1 && (
+                                    <div className="space-y-4 md:space-y-6">
+                                        {mode === 'ai-guided' ? (
+                                            <>
+                                                <div className="rounded-[16px] md:rounded-[20px] border border-white/10 bg-white/[0.02] p-3 md:p-4">
+                                                    <div className="mb-2 md:mb-3 text-[10px] md:text-xs uppercase tracking-[0.25em] md:tracking-[0.35em] text-white/40">Aspect ratio</div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {(['1:1','3:4','9:16','16:9'] as const).map((r) => {
+                                                            const selected = r === aspectRatio;
+                                                            return (
+                                                                <button
+                                                                    key={r}
+                                                                    type="button"
+                                                                    onClick={() => setAspectRatio(r)}
+                                                                    className={`rounded-full border px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm ${selected ? 'border-accent bg-accent/20 text-accent' : 'border-white/15 text-white/70 hover:border-white/35 hover:bg-white/[0.06]'}`}
+                                                                >
+                                                                    {r}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <p className="mt-2 md:mt-3 text-[10px] md:text-xs text-white/50">Used directly for rendering. 1:1 is default.</p>
+                                                </div>
+                                                <PresetSelection
+                                                    presets={ALL_PRESETS}
+                                                    recommendedPresets={recommendedPresets}
+                                                    selectedPreset={selectedPreset}
+                                                    onSelectPreset={setSelectedPreset}
+                                                />
+                                                <div className="flex items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
+                                                    <Button
+                                                        variant="secondary"
+                                                        onClick={() => setWizardStep(0)}
+                                                        className="rounded-full text-xs md:text-sm px-3 md:px-4"
+                                                    >
+                                                        Back
+                                                    </Button>
+                                                    <Button
+                                                        size="lg"
+                                                        onClick={handleGenerateConcepts}
+                                                        disabled={isGeneratingConcepts || (!uploadedFile && !textDescription.trim())}
+                                                        className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
+                                                    >
+                                                        {isGeneratingConcepts ? 'Generating concepts…' : 'Generate concepts'}
+                                                        <StarsIcon className="h-4 w-4 md:h-5 md:w-5" />
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ReferenceSettings
+                                                    aspectRatio={aspectRatio}
+                                                    onAspectRatioChange={setAspectRatio}
+                                                    refinements={referenceRefinements}
+                                                    onRefinementsChange={setReferenceRefinements}
+                                                />
+                                                <div className="flex items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
+                                                    <Button
+                                                        variant="secondary"
+                                                        onClick={() => setWizardStep(0)}
+                                                        className="rounded-full text-xs md:text-sm px-3 md:px-4"
+                                                    >
+                                                        Back
+                                                    </Button>
+                                                    <Button
+                                                        size="lg"
+                                                        onClick={handleGenerateFromReference}
+                                                        disabled={isLoading || !uploadedFile || !referenceImage || !referenceStyleAnalysis}
+                                                        className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
+                                                    >
+                                                        {isLoading ? 'Generating…' : 'Generate'}
+                                                        <StarsIcon className="h-4 w-4 md:h-5 md:w-5" />
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Step 3: Ideas (AI-guided mode only) */}
+                                {wizardStep === 2 && mode === 'ai-guided' && (
+                                    <div className="space-y-4 md:space-y-6">
+                                        <ConceptSelection
+                                            concepts={concepts}
+                                            selectedConcept={selectedConcept}
+                                            onSelectConcept={setSelectedConcept}
+                                        />
+                                        <div className="flex items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => setWizardStep(1)}
+                                                className="rounded-full text-xs md:text-sm px-3 md:px-4"
+                                            >
+                                                Back
+                                            </Button>
+                                            <Button
+                                                size="lg"
+                                                onClick={handleGenerateFinal}
+                                                disabled={isLoading || !selectedConcept}
+                                                className="flex items-center gap-2 rounded-full bg-white px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm text-slate-950 hover:bg-white/90"
+                                            >
+                                                {isLoading ? 'Generating…' : 'Generate'}
+                                                <StarsIcon className="h-4 w-4 md:h-5 md:w-5 text-slate-950" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Step 4: Final */}
+                                {wizardStep === 3 && (
+                                    <div className="space-y-4 md:space-y-6">
+                                        <div className="mx-auto w-full max-w-3xl">
+                                            <div className="relative overflow-hidden rounded-[20px] md:rounded-[28px] border border-white/10 bg-black/30">
+                                                <div className="w-full" style={canvasAspectStyle}>
+                                                    {generatedImage ? (
+                                                        <ImageResults
+                                                            image={generatedImage}
+                                                            onGenerateCaptions={fetchCaptions}
+                                                            onViewImage={() => setIsViewingImage(true)}
+                                                            onEditColor={handleOpenColorEditor}
+                                                            userId={userId}
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full w-full items-center justify-center text-white/50">
+                                                            Waiting for generation…
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => setWizardStep(mode === 'reference-image' ? 1 : 2)}
+                                                className="rounded-full text-xs md:text-sm px-3 md:px-4"
+                                            >
+                                                Back
+                                            </Button>
+                                            <div className="flex items-center gap-2 md:gap-3">
+                                                <Button
+                                                    variant="secondary"
+                                                    onClick={() => {
+                                                        if (!generatedImage) return;
+                                                        const link = document.createElement('a');
+                                                        link.href = `data:image/jpeg;base64,${generatedImage.base64}`;
+                                                        link.download = `visionary-ai-image-${generatedImage.id}.jpg`;
+                                                        link.click();
+                                                    }}
+                                                    className="flex items-center gap-1.5 md:gap-2 rounded-full text-xs md:text-sm px-3 md:px-4"
+                                                >
+                                                    <DownloadIcon className="h-3.5 w-3.5 md:h-4 md:w-4" /> Download
+                                                </Button>
+                                                <Button onClick={resetProject} className="rounded-full text-xs md:text-sm px-3 md:px-4">
+                                                    New Project
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            )}
+
+                {error || showSaveSuccess ? (
+                    <div className="flex-shrink-0 px-4 pb-4 md:px-8 md:pb-6 space-y-3">
+                        {error && (
+                            <div className="rounded-[20px] md:rounded-[30px] border border-red-500/30 bg-red-500/10 px-4 py-3 md:px-6 md:py-4 text-center text-xs md:text-sm text-red-200">
+                                {error}
+                            </div>
+                        )}
+                        {showSaveSuccess && (
+                            <div className="rounded-[20px] md:rounded-[30px] border border-accent/30 bg-accent/10 px-4 py-3 md:px-6 md:py-4 text-center text-xs md:text-sm text-accent">
+                                ✓ Shot saved to library successfully
+                            </div>
+                        )}
+                    </div>
+                ) : null}
+            </Card>
+
 
             {editingImage && (
-                <Modal isOpen={!!editingImage} onClose={() => setEditingImage(null)} title="Adjust Image Colors">
-                    <div className="space-y-4">
+                <Modal isOpen={!!editingImage} onClose={() => setEditingImage(null)} title="Adjust Color Toning">
+                    <div className="space-y-3 md:space-y-4">
                         <div className="flex justify-center">
-                           <img 
-                                src={`data:image/jpeg;base64,${editingImage.base64}`} 
-                                alt="Color editing preview" 
-                                className="w-60 h-60 rounded-lg object-cover border-2 border-slate-700" 
+                            <img
+                                src={`data:image/jpeg;base64,${editingImage.base64}`}
+                                alt="Color editing preview"
+                                className="h-48 w-48 md:h-60 md:w-60 rounded-2xl md:rounded-3xl border border-white/10 object-cover"
                                 style={{ filter: `hue-rotate(${tempColorAdjust.hue}deg) saturate(${tempColorAdjust.saturation}%)` }}
                             />
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-3 md:space-y-4">
                             <div>
-                                <label className="text-sm text-gray-400 flex justify-between"><span>Hue</span><span>{tempColorAdjust.hue}°</span></label>
-                                <input type="range" min="-180" max="180" value={tempColorAdjust.hue} onChange={(e) => setTempColorAdjust(p => ({...p, hue: parseInt(e.target.value)}))} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+                                <label className="flex justify-between text-[10px] md:text-xs uppercase tracking-[0.25em] md:tracking-[0.3em] text-white/50">
+                                    <span>Hue</span>
+                                    <span>{tempColorAdjust.hue}°</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="-180"
+                                    max="180"
+                                    value={tempColorAdjust.hue}
+                                    onChange={(e) =>
+                                        setTempColorAdjust((p) => ({ ...p, hue: parseInt(e.target.value, 10) }))
+                                    }
+                                    className="mt-2 w-full cursor-pointer appearance-none rounded-full bg-white/[0.08] accent-accent"
+                                />
                             </div>
                             <div>
-                                <label className="text-sm text-gray-400 flex justify-between"><span>Saturation</span><span>{tempColorAdjust.saturation}%</span></label>
-                                <input type="range" min="0" max="200" value={tempColorAdjust.saturation} onChange={(e) => setTempColorAdjust(p => ({...p, saturation: parseInt(e.target.value)}))} className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-500" />
+                                <label className="flex justify-between text-[10px] md:text-xs uppercase tracking-[0.25em] md:tracking-[0.3em] text-white/50">
+                                    <span>Saturation</span>
+                                    <span>{tempColorAdjust.saturation}%</span>
+                                </label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="200"
+                                    value={tempColorAdjust.saturation}
+                                    onChange={(e) =>
+                                        setTempColorAdjust((p) => ({ ...p, saturation: parseInt(e.target.value, 10) }))
+                                    }
+                                    className="mt-2 w-full cursor-pointer appearance-none rounded-full bg-white/[0.08] accent-accent"
+                                />
                             </div>
                         </div>
-                        <button onClick={handleSaveColorAdjust} className="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-md transition-colors">
-                            Save Changes
-                        </button>
+                        <Button className="w-full rounded-full text-xs md:text-sm" onClick={handleSaveColorAdjust}>
+                            Save adjustments
+                        </Button>
                     </div>
                 </Modal>
             )}
 
             {viewingImage && (
                 <Modal isOpen={isViewingImage} onClose={() => setIsViewingImage(false)} title="Image Preview" size="3xl">
-                    <div className="space-y-4">
+                    <div className="space-y-3 md:space-y-4">
                         <img 
                             src={`data:image/jpeg;base64,${viewingImage.base64}`} 
                             alt="Preview" 
-                            className="w-full h-auto rounded-lg object-contain max-h-[80vh]"
+                            className="w-full h-auto rounded-lg md:rounded-xl object-contain max-h-[70vh] md:max-h-[80vh]"
                             style={{ filter: `hue-rotate(${viewingImage.hue}deg) saturate(${viewingImage.saturation}%)` }}
                         />
                         {viewingImage.captions && (
-                             <div className="text-sm bg-slate-800 p-3 rounded-md space-y-2 max-h-40 overflow-y-auto">
-                                <p><strong className="text-sky-400">EN:</strong> {viewingImage.captions.english}</p>
-                                <p><strong className="text-sky-400">HI:</strong> {viewingImage.captions.hindi}</p>
-                                <p><strong className="text-sky-400">Hinglish:</strong> {viewingImage.captions.hinglish}</p>
-                                <hr className="border-slate-700 my-2" />
-                                <p><strong className="text-teal-400">Seductive EN:</strong> {(viewingImage.captions as SeductiveCaptions).seductiveEnglish}</p>
-                                <p><strong className="text-teal-400">Seductive HI:</strong> {(viewingImage.captions as SeductiveCaptions).seductiveHindi}</p>
-                                <p><strong className="text-teal-400">Seductive Hinglish:</strong> {(viewingImage.captions as SeductiveCaptions).seductiveHinglish}</p>
+                             <div className="max-h-40 md:max-h-48 space-y-1.5 md:space-y-2 overflow-y-auto rounded-xl md:rounded-2xl border border-white/10 bg-white/[0.05] p-3 md:p-4 text-xs md:text-sm text-white/80">
+                                <p><strong className="text-accent">EN:</strong> {viewingImage.captions.english}</p>
+                                <p><strong className="text-accent">HI:</strong> {viewingImage.captions.hindi}</p>
+                                <p><strong className="text-accent">Hinglish:</strong> {viewingImage.captions.hinglish}</p>
+                                <hr className="my-1.5 md:my-2 border-white/10" />
+                                <p><strong className="text-white/70">Seductive EN:</strong> {(viewingImage.captions as SeductiveCaptions).seductiveEnglish}</p>
+                                <p><strong className="text-white/70">Seductive HI:</strong> {(viewingImage.captions as SeductiveCaptions).seductiveHindi}</p>
+                                <p><strong className="text-white/70">Seductive Hinglish:</strong> {(viewingImage.captions as SeductiveCaptions).seductiveHinglish}</p>
                              </div>
                         )}
-                        <div className="flex justify-center items-center pt-2">
-                             <button onClick={() => {
+                        <div className="flex items-center justify-center pt-2 md:pt-3">
+                             <Button onClick={() => {
                                  const link = document.createElement('a');
                                  link.href = `data:image/jpeg;base64,${viewingImage.base64}`;
                                  link.download = `visionary-ai-image-${viewingImage.id}.jpg`;
                                  link.click();
-                             }} className="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-md flex items-center gap-2 transition-colors"><DownloadIcon className="w-4 h-4"/> Download</button>
+                             }} className="flex items-center gap-1.5 md:gap-2 rounded-full bg-accent px-4 py-1.5 md:px-5 md:py-2 text-xs md:text-sm text-slate-950 hover:bg-accent-hover">
+                                 <DownloadIcon className="h-3.5 w-3.5 md:h-4 md:w-4" /> Download
+                             </Button>
                         </div>
                     </div>
                 </Modal>

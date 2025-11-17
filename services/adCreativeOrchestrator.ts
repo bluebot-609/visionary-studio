@@ -3,7 +3,7 @@ import { generateConcepts, getCreativeDirection } from './agents/creativeDirecto
 import { getPhotographerSpecs } from './agents/photographerAgent';
 import { translateSpecsToArtisticPrompt } from './agents/promptArchitectAgent';
 import { generateImages } from './geminiService';
-import type { AdCreativeRequest, AgentOrchestrationResult, AdCreative, AdConcept, UserPreferences, ProductAnalysisResult } from '../types';
+import type { AdCreativeRequest, AgentOrchestrationResult, AdCreative, AdConcept, ProductAnalysisResult, UploadedFile } from '../types';
 
 // Map aspect ratio to supported formats
 const mapAspectRatio = (aspectRatio: string): "1:1" | "3:4" | "4:3" | "9:16" | "16:9" => {
@@ -18,22 +18,45 @@ const mapAspectRatio = (aspectRatio: string): "1:1" | "3:4" | "4:3" | "9:16" | "
   return ratioMap[aspectRatio] || '1:1'; // Default to 1:1 if not found
 };
 
+// Analyze product and get preset recommendations (called early in the flow)
+export const analyzeProductForPresets = async (
+  imageFile?: UploadedFile,
+  textDescription?: string,
+  onProgress?: (step: string, progress: number) => void
+): Promise<{ productAnalysis: ProductAnalysisResult; recommendedPresets: string[] }> => {
+  onProgress?.('Analyzing product...', 100);
+  const productAnalysis = await analyzeProduct(imageFile, textDescription);
+  
+  return {
+    productAnalysis,
+    recommendedPresets: productAnalysis.recommendedPresets || []
+  };
+};
+
 // Phase 1: Generate concepts for user selection
 export const generateConceptsForSelection = async (
   request: AdCreativeRequest,
+  existingProductAnalysis?: ProductAnalysisResult,
   onProgress?: (step: string, progress: number) => void
-): Promise<{ productAnalysis: ProductAnalysisResult; concepts: AdConcept[] }> => {
-  onProgress?.('Analyzing product...', 50);
-  const productAnalysis = await analyzeProduct(request.imageFile, request.textDescription);
+): Promise<{ productAnalysis: ProductAnalysisResult; concepts: AdConcept[]; recommendedPresets: string[] }> => {
+  // Use existing analysis if provided, otherwise analyze
+  const productAnalysis = existingProductAnalysis || await analyzeProduct(request.imageFile, request.textDescription);
+  
+  if (!existingProductAnalysis) {
+    onProgress?.('Analyzing product...', 50);
+  }
   
   onProgress?.('Generating concepts...', 100);
   const concepts = await generateConcepts(
     productAnalysis,
-    request.platformPreference,
-    request.userPreferences
+    request.platformPreference
   );
 
-  return { productAnalysis, concepts };
+  return { 
+    productAnalysis, 
+    concepts, 
+    recommendedPresets: productAnalysis.recommendedPresets || [] 
+  };
 };
 
 // Phase 2: Generate final ad creative with selected concept
@@ -51,7 +74,8 @@ export const orchestrateAdCreation = async (
   const creativeDirection = await getCreativeDirection(
     productAnalysis,
     selectedConcept,
-    request.platformPreference
+    request.platformPreference,
+    request.selectedPreset
   );
 
   // Step 2: Photographer Specifications
@@ -68,7 +92,9 @@ export const orchestrateAdCreation = async (
   
   // This step used to be Step 3, now it's Step 4
   onProgress?.('Generating image...', (++currentStep / totalSteps) * 100);
-  const mappedAspectRatio = mapAspectRatio(creativeDirection.aspectRatio);
+  // If caller provided an explicit aspect ratio, prefer it over AI decision
+  const chosenAspectRatio = request.aspectRatio || creativeDirection.aspectRatio;
+  const mappedAspectRatio = mapAspectRatio(chosenAspectRatio);
   
   // --- PASS THE NEW ARTISTIC PROMPT TO THE IMAGE MODEL ---
   const { images, prompt } = await generateImages(

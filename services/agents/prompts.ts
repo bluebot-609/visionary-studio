@@ -71,6 +71,13 @@ Analyze thoroughly, extracting every meaningful detail from both sources. When b
     - Determine brand tier: 'luxury' (ultra-premium, exclusive), 'premium' (high-quality, aspirational), 'mid-tier' (quality focus, accessible), 'mass-market' (broad appeal, value), or 'undetermined' (insufficient signals)
     - Suggest visual identity based on category and tier (e.g., "Fashion Luxury", "Tech Premium", "Beauty Luxury")
 
+12. Recommended photography presets
+    - Based on the product analysis above, recommend the top 3 most suitable photography aesthetic presets
+    - Consider: product category, brand tier, target audience, recommended mood/aesthetic, luxury indicators
+    - Available preset IDs: 'minimalist-clean', 'dark-moody', 'bright-airy', 'lifestyle-contextual', 'monochromatic', 'high-key-white-studio', 'textured-layered', 'gradient-modern', 'editorial-conceptual'
+    - Return an array of exactly 3 preset IDs in order of suitability (most suitable first)
+    - Match presets to product characteristics: e.g., luxury products → 'dark-moody' or 'editorial-conceptual'; e-commerce → 'minimalist-clean' or 'high-key-white-studio'; lifestyle → 'lifestyle-contextual' or 'bright-airy'
+
 Provide a structured, comprehensive analysis that will help creative teams make informed decisions about how to photograph and present this product.`;
 
 export const CREATIVE_DIRECTOR_PROMPT = `You are a world-class creative director with decades of experience in advertising and marketing.
@@ -217,7 +224,41 @@ If luxury/premium positioning is detected, apply luxury-specific technical consi
 
 - Space discipline: whitespace-driven composition
 
+**CRITICAL: MODEL REALISM REQUIREMENTS (if model is present):**
+
+When a model is required, you MUST specify settings that ensure photorealistic, natural human appearance:
+
+- **realismLevel:** MUST be "Photorealistic" or "Hyperrealistic" - never lower
+- **skinTexture:** MUST be "Natural" or "Detailed Pores" - avoid "Smooth & Airbrushed" which looks AI-generated. Natural skin texture with realistic imperfections is REQUIRED.
+- **hairDetail:** MUST be "Natural Flow" or "Sharp Individual Strands" - realistic hair detail is essential for authenticity
+- **Lighting:** Ensure lighting setup creates realistic skin interaction - highlights, shadows, and natural subsurface scattering
+- **Camera Settings:** Use appropriate depth of field to show realistic skin texture and natural details
+
+The goal is REAL PEOPLE, not AI-generated or synthetic appearance. Natural imperfections, realistic skin texture, and authentic human characteristics are REQUIRED.
+
 Provide detailed, professional specifications that will produce exceptional commercial photography.`;
+
+export const REFERENCE_STYLE_EXTRACTION_PROMPT = `You are an expert visual analyst specializing in photography and fashion aesthetics. Your task is to analyze a reference image and extract key style elements that can be used to guide product photography.
+
+**YOUR TASK:**
+Analyze the provided reference image and extract the following elements:
+
+1. **Style**: Overall aesthetic style (e.g., "minimalist luxury", "editorial fashion", "bright lifestyle", "dark moody")
+2. **Pose**: Model pose and positioning (e.g., "standing straight facing camera", "leaning against wall", "sitting casually")
+3. **Composition**: Framing and composition approach (e.g., "rule of thirds with model on left", "centered composition", "asymmetrical with negative space")
+4. **Background**: Background style and elements (e.g., "minimal white studio", "textured wood surface", "outdoor natural setting")
+5. **Lighting**: Lighting characteristics (e.g., "soft diffused natural light", "dramatic directional lighting", "bright even studio lighting")
+6. **Aesthetic**: Overall visual aesthetic and mood (e.g., "sophisticated and elegant", "fresh and approachable", "mysterious and dramatic")
+7. **Color Palette**: Dominant colors in the image (array of color descriptions)
+
+**ANALYSIS GUIDELINES:**
+- Be specific and descriptive in your analysis
+- Focus on elements that can be transferred to product photography
+- If no model is present, describe the overall composition and style
+- Consider how these elements would work for product placement
+- Extract practical, actionable style information
+
+Provide a comprehensive analysis that will help guide product photo generation with this aesthetic.`;
 
 export const MASTER_PROMPT_TEMPLATE = (productAnalysis: any, creativeDirection: any, photographerSpecs: any): string => {
   const lightingDescription = photographerSpecs.lighting.lights.map((light: any) => 
@@ -233,6 +274,31 @@ Generate a ${photographerSpecs.realismLevel} image based on the following profes
 
 ---
 ### **Professional Photography Shot Plan**
+
+#### **0. PRODUCT INTEGRITY & VISIBILITY REQUIREMENTS (CRITICAL)**
+
+**🔒 PRODUCT PRESERVATION (MOST IMPORTANT):**
+- **Product Type:** ${productAnalysis.productType} (${productAnalysis.productCategory})
+- **CRITICAL:** The product's appearance from the reference image MUST be preserved exactly as-is
+- **DO NOT ALTER:** Product colors, design, textures, branding, logos, text, or visual identity
+- **PRESERVE:** Product shape, form, proportions, materials, and all design elements
+- **RULE:** You are creating a new SCENE around the existing PRODUCT, not redesigning the product
+
+**👁️ PRODUCT VISIBILITY:**
+- **Product Prominence:** The ${productAnalysis.productType} MUST be clearly visible, recognizable, and prominent in the final image
+${creativeDirection.modelRequired ? `- **Product-Model Relationship:** The product must be visible and well-integrated with the model (held, worn, displayed, or positioned nearby). The model should complement the product, NOT overshadow it.
+- **Visual Hierarchy:** Both product and model are important, but ensure the ${productAnalysis.productType} maintains clear visual presence and is NOT hidden, obscured, or pushed out of frame.
+- **Spatial Positioning:** The product should occupy a clearly defined, prominent position in the composition.` : 
+`- **Visual Focus:** The ${productAnalysis.productType} is the sole focal point and primary subject of the image.
+- **Central Positioning:** Position the product as the undisputed center of visual attention.`}
+
+**📐 COMPOSITION RULES:**
+Ensure the ${productAnalysis.productType} is:
+  * NOT obscured by other elements (hands, clothing, backgrounds, lighting effects)
+  * NOT blurred out of focus unless intentionally for artistic effect
+  * NOT pushed to edges or corners of the frame
+  * CLEARLY identifiable and showcasing its key features
+  * Maintaining its original appearance from the reference image
 
 #### **1. Camera & Lens Configuration**
 - **Camera:** ${photographerSpecs.camera.type} (${photographerSpecs.camera.model})
@@ -250,11 +316,40 @@ ${lightingDescription}
 - **Background:** The subject is set against a ${photographerSpecs.background.type} background. The surface is ${photographerSpecs.background.surface} and made of ${photographerSpecs.background.material}. The overall scene is: ${photographerSpecs.background.description}.
 - **Presentation Style:** ${creativeDirection.presentationStyle}
 - **Location:** ${creativeDirection.location}
-${creativeDirection.modelRequired ? `- **Model:** ${creativeDirection.modelType || 'Professional model'}${creativeDirection.poseGuidance ? `, ${creativeDirection.poseGuidance}` : ''}` : ''}
+${creativeDirection.modelRequired ? `- **Model:** ${creativeDirection.modelType || 'Professional model'}${creativeDirection.poseGuidance ? `, ${creativeDirection.poseGuidance}` : ''}
+${creativeDirection.productInteraction ? `- **Product-Model Spatial Relationship:** ${creativeDirection.productInteraction}` : ''}` : ''}
+${creativeDirection.modelRequired && creativeDirection.expressionGuidance ? `
+#### **Model Emotion & Expression Blueprint**
+- **Target Emotion:** ${creativeDirection.expressionGuidance.emotion}
+- **Facial Details:** ${creativeDirection.expressionGuidance.facialExpression}
+- **Body Language:** ${creativeDirection.expressionGuidance.bodyLanguage}
+${creativeDirection.expressionGuidance.gazeDirection ? `- **Gaze Direction:** ${creativeDirection.expressionGuidance.gazeDirection}` : ''}
+${creativeDirection.expressionGuidance.energyLevel ? `- **Energy Level:** ${creativeDirection.expressionGuidance.energyLevel}` : ''}
+` : ''}
+${creativeDirection.supportingProps && creativeDirection.supportingProps.enabled ? `
+#### **Props & Environmental Storytelling**
+- **Strategy:** ${creativeDirection.supportingProps.strategy}
+- **Suggested Props:** ${(creativeDirection.supportingProps.propIdeas && creativeDirection.supportingProps.propIdeas.length > 0)
+  ? creativeDirection.supportingProps.propIdeas.join(', ')
+  : 'Defined props not provided - stay within the stated strategy'}
+${creativeDirection.supportingProps.interactionNotes ? `- **Interaction Notes:** ${creativeDirection.supportingProps.interactionNotes}` : ''}
+${creativeDirection.supportingProps.abstractionLevel ? `- **Abstraction Level:** ${creativeDirection.supportingProps.abstractionLevel}` : ''}
+` : ''}
 
 #### **4. Critical Realism Details**
-${photographerSpecs.skinTexture ? `- **Skin Texture:** Pay extreme attention to realism. Skin must have a "${photographerSpecs.skinTexture}" texture.` : ''}
-${photographerSpecs.hairDetail ? `- **Hair Detail:** Hair must show "${photographerSpecs.hairDetail}" detail.` : ''}
+${creativeDirection.modelRequired ? `
+**MANDATORY MODEL REALISM REQUIREMENTS:**
+- **Photorealistic Human Appearance:** The model must look like a REAL PERSON, not AI-generated or synthetic
+- **Natural Skin:** ${photographerSpecs.skinTexture ? `Skin texture: "${photographerSpecs.skinTexture}"` : 'Natural skin texture with subtle imperfections, realistic pores, and natural color variation. Avoid overly smooth, plastic, or airbrushed appearances.'}
+- **Realistic Hair:** ${photographerSpecs.hairDetail ? `Hair detail: "${photographerSpecs.hairDetail}"` : 'Natural hair with individual strands, realistic movement, and authentic texture. Natural highlights and shadows.'}
+- **Natural Poses:** Poses must be natural and human-like, not stiff or robotic. Natural weight distribution and body language.
+- **Realistic Expressions:** Subtle, nuanced facial expressions that look authentic, not exaggerated or fake.
+- **Natural Proportions:** Realistic body proportions - avoid exaggerated or unnatural features.
+- **Realistic Hands:** Proper finger proportions, natural positioning, no extra or missing fingers.
+- **Natural Lighting on Skin:** Realistic light interaction with skin - highlights, shadows, subsurface scattering. Avoid flat, uniform lighting.
+- **Avoid AI Artifacts:** NO extra fingers, distorted features, unrealistic smoothness, or "uncanny valley" characteristics.
+- **Realistic Details:** Subtle imperfections, natural skin variation, realistic hair behavior, authentic human characteristics.
+` : ''}
 ${photographerSpecs.manipulationStyle && photographerSpecs.manipulationStyle !== 'None' ? `- **Manipulation Style:** Apply a "${photographerSpecs.manipulationStyle}" style.` : ''}
 
 #### **5. Color & Visual Elements**

@@ -3,7 +3,7 @@ import type { ProductAnalysisResult, CreativeDirectorDecision, PhotographerSpeci
 import { PHOTOGRAPHER_PROMPT } from './prompts';
 import { evaluateLuxuryAlignment, getVisualIdentity } from './luxuryVisualIntelligence';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const getPhotographerSpecs = async (
   productAnalysis: ProductAnalysisResult,
@@ -49,6 +49,8 @@ Creative Direction:
 ${creativeDirection.modelType ? `- Model Type: ${creativeDirection.modelType}` : ''}
 ${creativeDirection.poseGuidance ? `- Pose Guidance: ${creativeDirection.poseGuidance}` : ''}
 ${creativeDirection.colorPalette ? `- Color Palette: ${creativeDirection.colorPalette.join(', ')}` : ''}
+${creativeDirection.supportingProps ? `- Supporting Props: ${creativeDirection.supportingProps.enabled ? `${creativeDirection.supportingProps.strategy}${creativeDirection.supportingProps.propIdeas && creativeDirection.supportingProps.propIdeas.length ? ` | Props: ${creativeDirection.supportingProps.propIdeas.join(', ')}` : ''}` : 'Keep scene prop-free'}` : ''}
+${creativeDirection.expressionGuidance ? `- Expression Guidance: Emotion="${creativeDirection.expressionGuidance.emotion}" | Face="${creativeDirection.expressionGuidance.facialExpression}" | Body="${creativeDirection.expressionGuidance.bodyLanguage}"${creativeDirection.expressionGuidance.gazeDirection ? ` | Gaze="${creativeDirection.expressionGuidance.gazeDirection}"` : ''}${creativeDirection.expressionGuidance.energyLevel ? ` | Energy="${creativeDirection.expressionGuidance.energyLevel}"` : ''}` : ''}
 
 Determine the optimal technical photography specifications and provide them in JSON format.
 ${isLuxury ? 'Include luxuryConsiderations object with applyLuxuryLogic, visualIdentity, and spaceDiscipline when luxury is detected.' : ''}`;
@@ -156,7 +158,10 @@ ${isLuxury ? 'Include luxuryConsiderations object with applyLuxuryLogic, visualI
   });
 
   try {
-    const jsonText = response.text.trim();
+    const jsonText = response.text?.trim() || '';
+    if (!jsonText) {
+      throw new Error("Empty response from Photographer Agent");
+    }
     const result = JSON.parse(jsonText);
     return result as PhotographerSpecification;
   } catch (e) {
