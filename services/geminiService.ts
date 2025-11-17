@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import type { UploadedFile, Concept, CreativeBrief } from '../types';
+import type { UploadedFile, Concept, CreativeBrief, ReferenceStyleAnalysis, ReferenceImageRefinements } from '../types';
 import { CREATIVE_BRIEF_OPTIONS } from '../options';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -130,9 +130,194 @@ ${masterPrompt}
       },
     });
     
-    const images = response.generatedImages.map(img => img.image.imageBytes);
+    const images = (response.generatedImages || [])
+      .map(img => img?.image?.imageBytes)
+      .filter((bytes): bytes is string => bytes !== undefined);
     return { images, prompt: masterPrompt };
   }
+};
+
+/**
+ * Generate product photo from reference image with style transfer
+ */
+export const generateFromReference = async (
+  productImage: UploadedFile,
+  referenceImage: UploadedFile,
+  styleAnalysis: ReferenceStyleAnalysis,
+  refinements: ReferenceImageRefinements,
+  aspectRatio: '1:1' | '3:4' | '9:16' | '16:9'
+): Promise<{ images: string[], prompt: string }> => {
+  const aspectRatioMap: Record<string, string> = {
+    '1:1': 'square (1:1)',
+    '3:4': 'portrait (3:4)',
+    '4:3': 'landscape (4:3)',
+    '9:16': 'vertical/portrait (9:16)',
+    '16:9': 'horizontal/landscape (16:9)',
+    '4:5': 'portrait (4:5)'
+  };
+  const aspectRatioDescription = aspectRatioMap[aspectRatio] || aspectRatio;
+
+  // Build the style transfer prompt
+  let styleTransferPrompt = `CRITICAL INSTRUCTIONS FOR REFERENCE-BASED IMAGE GENERATION:
+
+**🎯 DUAL PRIMARY RULES - BOTH MUST BE PRESERVED EXACTLY:**
+
+**RULE 1: PRODUCT INTEGRITY - ABSOLUTE PRESERVATION**
+The product image contains a PRODUCT that is the core subject. Your task is to:
+1. **LOOK AT THE PRODUCT IMAGE DIRECTLY** - the product MUST look EXACTLY like it does in the product reference image
+2. **DO NOT alter, re-imagine, modify, or reinterpret the product in any way** - copy it pixel-perfect from the product image
+3. **CRITICAL:** The style reference image should have ZERO influence on the product's appearance - the product stays exactly as shown in the product image
+4. The product's colors, textures, design, branding, and visual identity MUST remain identical to the product reference image
+
+**RULE 2: POSE INTEGRITY - ABSOLUTE PRESERVATION**
+The reference style image contains a MODEL POSE that must be replicated exactly. Your task is to:
+1. **LOOK AT THE REFERENCE STYLE IMAGE DIRECTLY** - the model's pose MUST be IDENTICAL to what you see in that image
+2. **DO NOT alter, modify, or change the pose in any way** - copy it pixel-perfect from the reference style image
+3. Only the model's FACE should be different (for copyright), but the pose stays exactly the same
+
+**WHAT TO PRESERVE FROM PRODUCT IMAGE (DO NOT CHANGE - ABSOLUTE):**
+- ✅ Product shape, form, and design - MUST match product reference EXACTLY, pixel-perfect
+- ✅ Product colors and color scheme - MUST match product reference EXACTLY - do NOT adopt, blend, or mix with colors from style reference
+- ✅ Product textures and materials - MUST match product reference EXACTLY - do NOT let style reference textures influence product
+- ✅ Brand logos, text, and labels on the product - MUST match product reference EXACTLY - every detail, every letter
+- ✅ Product packaging design - MUST match product reference EXACTLY
+- ✅ Product proportions and scale - MUST match product reference EXACTLY
+- ✅ Product's visual identity - MUST match product reference EXACTLY
+- ❌ DO NOT let the style reference image's colors, textures, aesthetic, or style influence the product itself AT ALL
+- ❌ DO NOT blend, mix, or merge product features with style reference features
+- ❌ DO NOT reinterpret the product based on the style reference - use ONLY the product image as source of truth for product appearance
+
+**WHAT TO TRANSFER FROM REFERENCE STYLE IMAGE (ONLY THESE ELEMENTS, NOT THE PRODUCT):**
+
+**IMPORTANT:** These elements apply to the SCENE, BACKGROUND, LIGHTING, and MODEL POSE only. They do NOT apply to the product itself.
+
+**Style:** ${styleAnalysis.style} (applies to scene/aesthetic, NOT product)
+**Pose:** ${styleAnalysis.pose} (copy EXACTLY from reference style image)
+**Composition:** ${styleAnalysis.composition} (applies to scene framing, NOT product)
+**Background:** ${styleAnalysis.background} (adapt with tweaks, NOT product)
+**Lighting:** ${styleAnalysis.lighting} (applies to scene lighting, NOT product colors)
+**Aesthetic:** ${styleAnalysis.aesthetic} (applies to overall scene mood, NOT product appearance)
+${styleAnalysis.colorPalette && styleAnalysis.colorPalette.length > 0 ? `**Color Palette:** ${styleAnalysis.colorPalette.join(', ')} (applies to background/scene, NOT product colors)` : ''}
+
+**CRITICAL SEPARATION:**
+- Product = comes 100% from product image (colors, textures, design, everything)
+- Scene/Background/Lighting/Pose = comes from reference style image
+- These two sources must NOT mix or influence each other
+
+**USER REFINEMENTS:**
+${refinements.lightingIntensity ? `- Lighting Intensity: ${refinements.lightingIntensity}` : ''}
+${refinements.backgroundColorAdjustment ? `- Background Adjustment: ${refinements.backgroundColorAdjustment}` : ''}
+
+**FACE REPLACEMENT AND MODEL APPEARANCE (if model present):**
+${refinements.faceReplacement !== false ? `
+- **CRITICAL - FACE MUST BE DIFFERENT:** Replace the model's face with a COMPLETELY DIFFERENT AI-generated face to avoid copyright issues
+- The new face should have:
+  * Different facial structure (different jawline, cheekbones, nose shape)
+  * Different hair color, texture, and style
+  * Different eye color and shape
+  * Different skin tone (can be similar but noticeably different)
+  * Different facial features overall
+- DO NOT create a face that looks similar to the reference - it must be clearly a different person
+- Maintain the same pose, expression energy, and overall body positioning from the reference
+- Ensure the new face is photorealistic and matches the aesthetic quality
+- The new face should look natural and realistic, not AI-generated
+- Preserve the model's body proportions, clothing style, and positioning exactly as guided by the pose description
+- Keep the same energy and mood, but with a different person's face
+` : ''}
+
+**MANDATORY ASPECT RATIO REQUIREMENT:**
+- The output image MUST have an aspect ratio of EXACTLY ${aspectRatio} (${aspectRatioDescription})
+- If aspect ratio changes, extend or adjust the SCENE and BACKGROUND, but keep the product itself intact
+
+**COMPOSITION GUIDELINES:**
+- Apply the composition style from the reference: ${styleAnalysis.composition}
+- **CRITICAL - MODEL POSE MUST MATCH REFERENCE EXACTLY:**
+  - **LOOK AT THE REFERENCE STYLE IMAGE DIRECTLY** - the model's pose MUST be IDENTICAL to what you see in that image
+  - DO NOT alter, modify, or change the pose in any way - copy it pixel-perfect
+  - DO NOT interpret or reinterpret the pose - replicate it exactly as shown
+  - Preserve EXACTLY from the reference style image:
+    * Body positioning and angles (torso, shoulders, hips alignment)
+    * Limb placement (arms, legs, hands, feet positions - every joint angle)
+    * Head angle and gaze direction (exact head tilt and where eyes are looking)
+    * Body weight distribution and stance (which leg bears weight, body lean)
+    * Overall body language and energy (the exact posture and attitude)
+  - The pose description provided is: ${styleAnalysis.pose}
+  - **BUT THE REFERENCE IMAGE IS THE SOURCE OF TRUTH** - match the pose you see in the reference style image exactly
+  - This pose is MANDATORY - replicate it exactly from the reference style image, do not create variations
+  
+- **PRODUCT ALIGNMENT WITH POSE:**
+  - Position the product in relation to the model's pose EXACTLY as shown in the reference style image
+  - Maintain the exact spatial relationships between model, product, and environment from the reference
+  - If the reference shows the product in a specific position relative to the model, replicate that EXACTLY
+  - Preserve the dynamic energy and mood of the pose from the reference
+  - Ensure product visibility while maintaining the exact pose structure
+  
+- **BACKGROUND ADAPTATION:** 
+  - Use the reference background style as inspiration: ${styleAnalysis.background}
+  - ADAPT and TWEAK the background (don't copy exactly):
+    * Slightly adjust colors, tones, or textures
+    * Modify depth or blur levels
+    * Add or remove subtle elements for visual interest
+    * Adjust lighting interaction with background
+    * Create a similar vibe but with unique character
+  - The background should complement the pose and product while maintaining the reference aesthetic
+- Apply the lighting style: ${styleAnalysis.lighting}
+
+**FINAL CHECKLIST - BOTH RULES MUST BE SATISFIED:**
+✅ **PRODUCT RULE:** Product appearance is preserved EXACTLY from product reference image - colors, textures, design, logos, labels, everything matches pixel-perfect
+✅ **PRODUCT RULE:** Product has ZERO influence from style reference image - product looks exactly like product image, not like style reference
+✅ **POSE RULE:** Model pose is IDENTICAL to reference style image - body positioning, limb placement, angles, gaze, energy all match exactly
+✅ **POSE RULE:** Pose is NOT altered - it matches the reference style image exactly
+✅ Product is positioned in relation to model's pose EXACTLY as shown in reference style image
+✅ Model face is COMPLETELY DIFFERENT from reference (different features, hair, structure, clearly different person)
+✅ Background is adapted/inspired by reference but with unique tweaks (colors, textures, depth variations)
+✅ Style elements are transferred from reference style image (to scene/background only, NOT to product)
+✅ Composition and aesthetic match the reference style
+✅ Output aspect ratio is exactly ${aspectRatio} (${aspectRatioDescription})
+✅ Product is clearly visible and prominent in the final image
+${refinements.faceReplacement !== false ? '✅ Model face has been replaced with a COMPLETELY DIFFERENT face (not similar)' : ''}
+✅ **BALANCE CHECK:** Both product (from product image) and pose (from style reference) are preserved exactly without compromising each other`;
+
+  const productImagePart = fileToGenerativePart(productImage);
+  const referenceImagePart = fileToGenerativePart(referenceImage);
+  const textPart = { text: styleTransferPrompt };
+
+  const apiAspectRatio = aspectRatio as "1:1" | "3:4" | "4:3" | "9:16" | "16:9";
+
+  // Use Gemini's multi-image input capability
+  // Structure the request similar to the regular image-to-image flow
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash-image',
+    contents: { 
+      parts: [
+        { text: "Product Image (preserve exactly - do not change product appearance):" },
+        productImagePart,
+        { text: "\nReference Style Image (copy pose EXACTLY from this image, apply style/aesthetic, but use different face):" },
+        referenceImagePart,
+        { text: "\n\n" + styleTransferPrompt }
+      ] 
+    },
+    config: { 
+      responseModalities: [Modality.IMAGE],
+      imageConfig: {
+        aspectRatio: apiAspectRatio,
+      },
+    },
+  });
+
+  const imagePartResponse = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
+  const images = imagePartResponse?.inlineData?.data ? [imagePartResponse.inlineData.data] : [];
+  
+  if (images.length === 0) {
+    console.error('No image generated from reference', {
+      response: response.candidates?.[0],
+      hasParts: !!response.candidates?.[0]?.content?.parts,
+      partsLength: response.candidates?.[0]?.content?.parts?.length
+    });
+    throw new Error('Failed to generate image from reference - no image data in response');
+  }
+  
+  return { images, prompt: styleTransferPrompt };
 };
 
 export const generateCaptions = async (imageBase64: string) => {
@@ -161,7 +346,11 @@ export const generateCaptions = async (imageBase64: string) => {
     });
 
     try {
-        const jsonText = response.text.trim();
+        const jsonText = response.text?.trim() || '';
+        if (!jsonText) {
+            console.error("Empty response from captions generation");
+            return null;
+        }
         return JSON.parse(jsonText);
     } catch (e) {
         console.error("Failed to parse captions JSON:", e);
@@ -220,7 +409,11 @@ export const getCreativeBriefSuggestions = async (creativeGoal: string, imageFil
   });
 
   try {
-    const jsonText = response.text.trim();
+    const jsonText = response.text?.trim() || '';
+    if (!jsonText) {
+      console.error("Empty response from creative brief suggestions");
+      return null;
+    }
     return JSON.parse(jsonText);
   } catch (e) {
     console.error("Failed to parse suggestions JSON:", e);
@@ -256,7 +449,11 @@ IMPORTANT: Only output the raw JSON array. Do not include any other text, markdo
     });
 
     try {
-        const rawJson = response.text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
+        const rawJson = (response.text?.trim() || '').replace(/^```json\n?/, '').replace(/\n?```$/, '');
+        if (!rawJson) {
+            console.error("Empty response from website analysis");
+            return [];
+        }
         const concepts = JSON.parse(rawJson);
         return concepts;
     } catch (e) {

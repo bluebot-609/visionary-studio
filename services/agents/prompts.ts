@@ -238,6 +238,28 @@ The goal is REAL PEOPLE, not AI-generated or synthetic appearance. Natural imper
 
 Provide detailed, professional specifications that will produce exceptional commercial photography.`;
 
+export const REFERENCE_STYLE_EXTRACTION_PROMPT = `You are an expert visual analyst specializing in photography and fashion aesthetics. Your task is to analyze a reference image and extract key style elements that can be used to guide product photography.
+
+**YOUR TASK:**
+Analyze the provided reference image and extract the following elements:
+
+1. **Style**: Overall aesthetic style (e.g., "minimalist luxury", "editorial fashion", "bright lifestyle", "dark moody")
+2. **Pose**: Model pose and positioning (e.g., "standing straight facing camera", "leaning against wall", "sitting casually")
+3. **Composition**: Framing and composition approach (e.g., "rule of thirds with model on left", "centered composition", "asymmetrical with negative space")
+4. **Background**: Background style and elements (e.g., "minimal white studio", "textured wood surface", "outdoor natural setting")
+5. **Lighting**: Lighting characteristics (e.g., "soft diffused natural light", "dramatic directional lighting", "bright even studio lighting")
+6. **Aesthetic**: Overall visual aesthetic and mood (e.g., "sophisticated and elegant", "fresh and approachable", "mysterious and dramatic")
+7. **Color Palette**: Dominant colors in the image (array of color descriptions)
+
+**ANALYSIS GUIDELINES:**
+- Be specific and descriptive in your analysis
+- Focus on elements that can be transferred to product photography
+- If no model is present, describe the overall composition and style
+- Consider how these elements would work for product placement
+- Extract practical, actionable style information
+
+Provide a comprehensive analysis that will help guide product photo generation with this aesthetic.`;
+
 export const MASTER_PROMPT_TEMPLATE = (productAnalysis: any, creativeDirection: any, photographerSpecs: any): string => {
   const lightingDescription = photographerSpecs.lighting.lights.map((light: any) => 
     `- **${light.name}:** A ${light.type} positioned at ${light.position} with an intensity of ${light.intensity_percent}%.`
@@ -296,6 +318,23 @@ ${lightingDescription}
 - **Location:** ${creativeDirection.location}
 ${creativeDirection.modelRequired ? `- **Model:** ${creativeDirection.modelType || 'Professional model'}${creativeDirection.poseGuidance ? `, ${creativeDirection.poseGuidance}` : ''}
 ${creativeDirection.productInteraction ? `- **Product-Model Spatial Relationship:** ${creativeDirection.productInteraction}` : ''}` : ''}
+${creativeDirection.modelRequired && creativeDirection.expressionGuidance ? `
+#### **Model Emotion & Expression Blueprint**
+- **Target Emotion:** ${creativeDirection.expressionGuidance.emotion}
+- **Facial Details:** ${creativeDirection.expressionGuidance.facialExpression}
+- **Body Language:** ${creativeDirection.expressionGuidance.bodyLanguage}
+${creativeDirection.expressionGuidance.gazeDirection ? `- **Gaze Direction:** ${creativeDirection.expressionGuidance.gazeDirection}` : ''}
+${creativeDirection.expressionGuidance.energyLevel ? `- **Energy Level:** ${creativeDirection.expressionGuidance.energyLevel}` : ''}
+` : ''}
+${creativeDirection.supportingProps && creativeDirection.supportingProps.enabled ? `
+#### **Props & Environmental Storytelling**
+- **Strategy:** ${creativeDirection.supportingProps.strategy}
+- **Suggested Props:** ${(creativeDirection.supportingProps.propIdeas && creativeDirection.supportingProps.propIdeas.length > 0)
+  ? creativeDirection.supportingProps.propIdeas.join(', ')
+  : 'Defined props not provided - stay within the stated strategy'}
+${creativeDirection.supportingProps.interactionNotes ? `- **Interaction Notes:** ${creativeDirection.supportingProps.interactionNotes}` : ''}
+${creativeDirection.supportingProps.abstractionLevel ? `- **Abstraction Level:** ${creativeDirection.supportingProps.abstractionLevel}` : ''}
+` : ''}
 
 #### **4. Critical Realism Details**
 ${creativeDirection.modelRequired ? `

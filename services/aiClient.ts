@@ -3,7 +3,7 @@
  * This replaces direct imports of AI agents to keep API keys server-side
  */
 
-import type { AdConcept, ProductAnalysisResult, AdCreative, AdCreativeRequest, SeductiveCaptions, UploadedFile } from '../types';
+import type { AdConcept, ProductAnalysisResult, AdCreative, AdCreativeRequest, SeductiveCaptions, UploadedFile, ReferenceStyleAnalysis, ReferenceImageRefinements } from '../types';
 
 /**
  * Analyze product and get preset recommendations via API route
@@ -128,5 +128,71 @@ export const generateCaptions = async (base64Image: string): Promise<SeductiveCa
 
   const data = await response.json();
   return data.captions;
+};
+
+/**
+ * Analyze reference image and extract style elements via API route
+ */
+export const analyzeReferenceStyle = async (
+  referenceImage: UploadedFile,
+  userNotes?: string,
+  onProgress?: (step: string, progress: number) => void
+): Promise<ReferenceStyleAnalysis> => {
+  onProgress?.('Analyzing reference image...', 50);
+  
+  const response = await fetch('/api/ai/reference/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      referenceImage,
+      userNotes,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to analyze reference image');
+  }
+
+  onProgress?.('Analysis complete', 100);
+  const data = await response.json();
+  
+  return data;
+};
+
+/**
+ * Generate product photo from reference image via API route
+ */
+export const generateFromReference = async (
+  productImage: UploadedFile,
+  referenceImage: UploadedFile,
+  styleAnalysis: ReferenceStyleAnalysis,
+  refinements: ReferenceImageRefinements,
+  aspectRatio: '1:1' | '3:4' | '9:16' | '16:9',
+  onProgress?: (step: string, progress: number) => void
+): Promise<AdCreative> => {
+  onProgress?.('Generating image with style transfer...', 50);
+  
+  const response = await fetch('/api/ai/reference/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      productImage,
+      referenceImage,
+      styleAnalysis,
+      refinements,
+      aspectRatio,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to generate from reference');
+  }
+
+  onProgress?.('Image generated', 100);
+  const data = await response.json();
+  
+  return data;
 };
 

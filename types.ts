@@ -22,6 +22,16 @@ export interface UploadedFile {
   base64: string;
 }
 
+export interface ReferenceStyleAnalysis {
+  style: string;
+  pose: string;
+  composition: string;
+  background: string;
+  lighting: string;
+  aesthetic: string;
+  colorPalette?: string[];
+}
+
 export interface GeneratedImage {
   id: string;
   base64: string;
@@ -140,6 +150,22 @@ export interface LuxuryVisualGuidelines {
   spaceUse: string; // 'Whitespace-driven' | 'Layered Environment' | 'Dynamic Diagonal'
 }
 
+export interface PropStrategy {
+  enabled: boolean;
+  strategy: string;
+  propIdeas: string[];
+  interactionNotes?: string;
+  abstractionLevel?: 'literal' | 'abstract' | 'minimal' | 'none';
+}
+
+export interface ExpressionGuidance {
+  emotion: string;
+  facialExpression: string;
+  bodyLanguage: string;
+  gazeDirection?: string;
+  energyLevel?: string;
+}
+
 export interface CreativeDirectorDecision {
   adType: string; // 'product-showcase' | 'lifestyle' | 'testimonial' | etc.
   platformRecommendation: string; // 'Instagram Post' | 'Instagram Story' | 'Facebook Post' | 'Twitter Post'
@@ -156,6 +182,8 @@ export interface CreativeDirectorDecision {
   aspectRatio: string;
   concepts?: AdConcept[]; // Multiple concepts for user selection
   luxuryVisualGuidelines?: LuxuryVisualGuidelines;
+  supportingProps?: PropStrategy;
+  expressionGuidance?: ExpressionGuidance;
 }
 
 export interface LuxuryConsiderations {
@@ -210,11 +238,21 @@ export interface AdCreativeRequest {
   selectedConcept?: AdConcept; // User-selected concept
   selectedPreset?: string; // Preset ID
   aspectRatio?: '1:1' | '3:4' | '9:16' | '16:9'; // Explicit aspect ratio override
+  mode?: 'ai-guided' | 'reference-image'; // Generation mode
+  referenceImage?: UploadedFile; // Reference image for style transfer
+  referenceNotes?: string; // Optional user guidance for reference mode
 }
 
 export interface AdCreative {
   id: string;
   base64: string;
   prompt: string;
-  agentDecisions: AgentOrchestrationResult;
+  agentDecisions?: AgentOrchestrationResult; // Optional for reference mode
+  referenceStyleAnalysis?: ReferenceStyleAnalysis; // For reference mode
+}
+
+export interface ReferenceImageRefinements {
+  backgroundColorAdjustment?: string; // Optional background color/intensity
+  lightingIntensity?: 'subtle' | 'moderate' | 'strong'; // Optional lighting adjustment
+  faceReplacement?: boolean; // Whether to replace model face
 }

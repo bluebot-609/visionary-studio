@@ -49,6 +49,8 @@ Creative Direction:
 ${creativeDirection.modelType ? `- Model Type: ${creativeDirection.modelType}` : ''}
 ${creativeDirection.poseGuidance ? `- Pose Guidance: ${creativeDirection.poseGuidance}` : ''}
 ${creativeDirection.colorPalette ? `- Color Palette: ${creativeDirection.colorPalette.join(', ')}` : ''}
+${creativeDirection.supportingProps ? `- Supporting Props: ${creativeDirection.supportingProps.enabled ? `${creativeDirection.supportingProps.strategy}${creativeDirection.supportingProps.propIdeas && creativeDirection.supportingProps.propIdeas.length ? ` | Props: ${creativeDirection.supportingProps.propIdeas.join(', ')}` : ''}` : 'Keep scene prop-free'}` : ''}
+${creativeDirection.expressionGuidance ? `- Expression Guidance: Emotion="${creativeDirection.expressionGuidance.emotion}" | Face="${creativeDirection.expressionGuidance.facialExpression}" | Body="${creativeDirection.expressionGuidance.bodyLanguage}"${creativeDirection.expressionGuidance.gazeDirection ? ` | Gaze="${creativeDirection.expressionGuidance.gazeDirection}"` : ''}${creativeDirection.expressionGuidance.energyLevel ? ` | Energy="${creativeDirection.expressionGuidance.energyLevel}"` : ''}` : ''}
 
 Determine the optimal technical photography specifications and provide them in JSON format.
 ${isLuxury ? 'Include luxuryConsiderations object with applyLuxuryLogic, visualIdentity, and spaceDiscipline when luxury is detected.' : ''}`;

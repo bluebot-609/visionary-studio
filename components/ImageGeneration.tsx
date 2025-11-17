@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useCallback, useMemo } from 'react';
-import type { UploadedFile, GeneratedImage, SeductiveCaptions, AdConcept, ProductAnalysisResult } from '../types';
-import { analyzeProductForPresets, generateConceptsForSelection, orchestrateAdCreation, generateCaptions } from '../services/aiClient';
+import type { UploadedFile, GeneratedImage, SeductiveCaptions, AdConcept, ProductAnalysisResult, ReferenceStyleAnalysis, ReferenceImageRefinements } from '../types';
+import { analyzeProductForPresets, generateConceptsForSelection, orchestrateAdCreation, generateCaptions, analyzeReferenceStyle, generateFromReference } from '../services/aiClient';
 import { saveShot } from '../services/shotLibrary';
 import { ALL_PRESETS } from '../services/presets';
 import Modal from './Modal';
@@ -16,6 +16,9 @@ import {
   ConceptSelection,
   ImageResults,
   PresetSelection,
+  ModeSelector,
+  ReferenceImageUpload,
+  ReferenceSettings,
 } from './image-generation';
 
 const fileToBase64 = (file: File): Promise<string> =>
@@ -50,6 +53,16 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
     const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
     const [recommendedPresets, setRecommendedPresets] = useState<string[]>([]);
     
+    // Reference image mode state
+    const [mode, setMode] = useState<'ai-guided' | 'reference-image'>('ai-guided');
+    const [referenceImage, setReferenceImage] = useState<UploadedFile | null>(null);
+    const [referenceNotes, setReferenceNotes] = useState<string>('');
+    const [referenceStyleAnalysis, setReferenceStyleAnalysis] = useState<ReferenceStyleAnalysis | null>(null);
+    const [referenceRefinements, setReferenceRefinements] = useState<ReferenceImageRefinements>({
+      faceReplacement: true,
+    });
+    const [isAnalyzingReference, setIsAnalyzingReference] = useState(false);
+    
     const [isViewingImage, setIsViewingImage] = useState<boolean>(false);
     const [editingImage, setEditingImage] = useState<GeneratedImage | null>(null);
     const [tempColorAdjust, setTempColorAdjust] = useState({ hue: 0, saturation: 100 });
@@ -69,8 +82,15 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
         setWizardStep(0);
         setSelectedPreset(null);
         setRecommendedPresets([]);
+        setMode('ai-guided');
+        setReferenceImage(null);
+        setReferenceNotes('');
+        setReferenceStyleAnalysis(null);
+        setReferenceRefinements({ faceReplacement: true });
         const fileInput = document.getElementById('file-upload') as HTMLInputElement | null;
         if (fileInput) fileInput.value = '';
+        const refFileInput = document.getElementById('reference-file-upload') as HTMLInputElement | null;
+        if (refFileInput) refFileInput.value = '';
     };
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +110,60 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
         const fileInput = document.getElementById('file-upload') as HTMLInputElement;
         if (fileInput) {
             fileInput.value = '';
+        }
+    };
+
+    const handleReferenceFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const base64 = await fileToBase64(file);
+            setReferenceImage({
+                name: file.name,
+                type: file.type,
+                base64: base64,
+            });
+        }
+    };
+
+    const handleRemoveReferenceFile = () => {
+        setReferenceImage(null);
+        setReferenceStyleAnalysis(null);
+        const fileInput = document.getElementById('reference-file-upload') as HTMLInputElement;
+        if (fileInput) {
+            fileInput.value = '';
+        }
+    };
+
+    const handleAnalyzeReference = async () => {
+        if (!referenceImage) {
+            return;
+        }
+
+        setIsAnalyzingReference(true);
+        setError(null);
+        setCurrentStep('Analyzing reference image...');
+        setProgress(0);
+
+        try {
+            const result = await analyzeReferenceStyle(
+                referenceImage,
+                referenceNotes.trim() || undefined,
+                (step, progressValue) => {
+                    setCurrentStep(step);
+                    setProgress(progressValue);
+                }
+            );
+
+            setReferenceStyleAnalysis(result);
+        } catch (e) {
+            if (process.env.NODE_ENV === 'development') {
+                console.error(e);
+            }
+            setError('Failed to analyze reference image. You can still proceed.');
+        } finally {
+            setIsAnalyzingReference(false);
+            setCurrentStep('');
+            setProgress(0);
         }
     };
 
@@ -169,6 +243,60 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
             setError('Failed to generate concepts. Please try again.');
         } finally {
             setIsGeneratingConcepts(false);
+            setCurrentStep('');
+            setProgress(0);
+        }
+    };
+
+    const handleGenerateFromReference = async () => {
+        if (!uploadedFile || !referenceImage || !referenceStyleAnalysis) {
+            setError('Please upload both product and reference images, and analyze the reference first.');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        setGeneratedImage(null);
+        setCurrentStep('Generating image with style transfer...');
+        setProgress(0);
+
+        try {
+            const adCreative = await generateFromReference(
+                uploadedFile,
+                referenceImage,
+                referenceStyleAnalysis,
+                referenceRefinements,
+                aspectRatio,
+                (step, progressValue) => {
+                    setCurrentStep(step);
+                    setProgress(progressValue);
+                }
+            );
+
+            if (!adCreative || !adCreative.base64) {
+                console.error('No base64 data in response', adCreative);
+                throw new Error('Generated image has no base64 data');
+            }
+
+            const newImage: GeneratedImage = {
+                id: adCreative.id,
+                base64: adCreative.base64,
+                captions: null,
+                hue: 0,
+                saturation: 100,
+            };
+
+            console.log('Generated image set', { id: newImage.id, hasBase64: !!newImage.base64 });
+            setGeneratedImage(newImage);
+            setWizardStep(3);
+        } catch (e) {
+            console.error('Error generating from reference:', e);
+            if (process.env.NODE_ENV === 'development') {
+                console.error(e);
+            }
+            setError(e instanceof Error ? e.message : 'Failed to generate image. Please try again.');
+        } finally {
+            setIsLoading(false);
             setCurrentStep('');
             setProgress(0);
         }
@@ -312,13 +440,18 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                             <div className="relative">
                                 {/* Liquid fill loading indicator */}
                                 <LiquidFillLoader
-                                    visible={(isAnalyzingProduct || isGeneratingConcepts || isLoading) && !!currentStep}
+                                    visible={(isAnalyzingProduct || isAnalyzingReference || isGeneratingConcepts || isLoading) && !!currentStep}
                                     currentStep={currentStep || 'Processing...'}
                                     progress={progress}
                                 />
                                 {/* Step 1: Input (Image + Brief) */}
                                 {wizardStep === 0 && (
                                     <div className="space-y-4 md:space-y-6">
+                                        <ModeSelector
+                                            mode={mode}
+                                            onModeChange={setMode}
+                                        />
+                                        
                                         <ImageUpload
                                             onFileChange={handleFileChange}
                                             uploadedFile={uploadedFile}
@@ -326,6 +459,17 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                                             textDescription={textDescription}
                                             onTextChange={setTextDescription}
                                         />
+
+                                        {mode === 'reference-image' && (
+                                            <ReferenceImageUpload
+                                                onFileChange={handleReferenceFileChange}
+                                                uploadedFile={referenceImage}
+                                                onRemoveFile={handleRemoveReferenceFile}
+                                                referenceNotes={referenceNotes}
+                                                onNotesChange={setReferenceNotes}
+                                            />
+                                        )}
+
                                         <div className="flex items-center justify-end gap-2 md:gap-3 pt-4 border-t border-white/5">
                                             <Button
                                                 variant="secondary"
@@ -334,20 +478,37 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                                             >
                                                 Reset
                                             </Button>
-                                            <Button
-                                                size="lg"
-                                                onClick={async () => {
-                                                    // Trigger product analysis when moving to Step 1
-                                                    if (uploadedFile || textDescription.trim()) {
-                                                        await handleAnalyzeProduct();
-                                                    }
-                                                    setWizardStep(1);
-                                                }}
-                                                disabled={isAnalyzingProduct || (!uploadedFile && !textDescription.trim())}
-                                                className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
-                                            >
-                                                {isAnalyzingProduct ? 'Analyzing...' : 'Next'}
-                                            </Button>
+                                            {mode === 'ai-guided' ? (
+                                                <Button
+                                                    size="lg"
+                                                    onClick={async () => {
+                                                        // Trigger product analysis when moving to Step 1
+                                                        if (uploadedFile || textDescription.trim()) {
+                                                            await handleAnalyzeProduct();
+                                                        }
+                                                        setWizardStep(1);
+                                                    }}
+                                                    disabled={isAnalyzingProduct || (!uploadedFile && !textDescription.trim())}
+                                                    className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
+                                                >
+                                                    {isAnalyzingProduct ? 'Analyzing...' : 'Next'}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    size="lg"
+                                                    onClick={async () => {
+                                                        // Analyze reference image when moving to Step 1
+                                                        if (referenceImage) {
+                                                            await handleAnalyzeReference();
+                                                        }
+                                                        setWizardStep(1);
+                                                    }}
+                                                    disabled={isAnalyzingReference || !uploadedFile || !referenceImage}
+                                                    className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
+                                                >
+                                                    {isAnalyzingReference ? 'Analyzing...' : 'Next'}
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -355,54 +516,85 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                                 {/* Step 2: Aspect ratio + Optional controls */}
                                 {wizardStep === 1 && (
                                     <div className="space-y-4 md:space-y-6">
-                                        <div className="rounded-[16px] md:rounded-[20px] border border-white/10 bg-white/[0.02] p-3 md:p-4">
-                                            <div className="mb-2 md:mb-3 text-[10px] md:text-xs uppercase tracking-[0.25em] md:tracking-[0.35em] text-white/40">Aspect ratio</div>
-                                            <div className="flex flex-wrap gap-2">
-                                                {(['1:1','3:4','9:16','16:9'] as const).map((r) => {
-                                                    const selected = r === aspectRatio;
-                                                    return (
-                                                        <button
-                                                            key={r}
-                                                            type="button"
-                                                            onClick={() => setAspectRatio(r)}
-                                                            className={`rounded-full border px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm ${selected ? 'border-accent bg-accent/20 text-accent' : 'border-white/15 text-white/70 hover:border-white/35 hover:bg-white/[0.06]'}`}
-                                                        >
-                                                            {r}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                            <p className="mt-2 md:mt-3 text-[10px] md:text-xs text-white/50">Used directly for rendering. 1:1 is default.</p>
-                                        </div>
-                                        <PresetSelection
-                                            presets={ALL_PRESETS}
-                                            recommendedPresets={recommendedPresets}
-                                            selectedPreset={selectedPreset}
-                                            onSelectPreset={setSelectedPreset}
-                                        />
-                                        <div className="flex items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
-                                            <Button
-                                                variant="secondary"
-                                                onClick={() => setWizardStep(0)}
-                                                className="rounded-full text-xs md:text-sm px-3 md:px-4"
-                                            >
-                                                Back
-                                            </Button>
-                                            <Button
-                                                size="lg"
-                                                onClick={handleGenerateConcepts}
-                                                disabled={isGeneratingConcepts || (!uploadedFile && !textDescription.trim())}
-                                                className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
-                                            >
-                                                {isGeneratingConcepts ? 'Generating concepts…' : 'Generate concepts'}
-                                                <StarsIcon className="h-4 w-4 md:h-5 md:w-5" />
-                                            </Button>
-                                        </div>
+                                        {mode === 'ai-guided' ? (
+                                            <>
+                                                <div className="rounded-[16px] md:rounded-[20px] border border-white/10 bg-white/[0.02] p-3 md:p-4">
+                                                    <div className="mb-2 md:mb-3 text-[10px] md:text-xs uppercase tracking-[0.25em] md:tracking-[0.35em] text-white/40">Aspect ratio</div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {(['1:1','3:4','9:16','16:9'] as const).map((r) => {
+                                                            const selected = r === aspectRatio;
+                                                            return (
+                                                                <button
+                                                                    key={r}
+                                                                    type="button"
+                                                                    onClick={() => setAspectRatio(r)}
+                                                                    className={`rounded-full border px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm ${selected ? 'border-accent bg-accent/20 text-accent' : 'border-white/15 text-white/70 hover:border-white/35 hover:bg-white/[0.06]'}`}
+                                                                >
+                                                                    {r}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <p className="mt-2 md:mt-3 text-[10px] md:text-xs text-white/50">Used directly for rendering. 1:1 is default.</p>
+                                                </div>
+                                                <PresetSelection
+                                                    presets={ALL_PRESETS}
+                                                    recommendedPresets={recommendedPresets}
+                                                    selectedPreset={selectedPreset}
+                                                    onSelectPreset={setSelectedPreset}
+                                                />
+                                                <div className="flex items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
+                                                    <Button
+                                                        variant="secondary"
+                                                        onClick={() => setWizardStep(0)}
+                                                        className="rounded-full text-xs md:text-sm px-3 md:px-4"
+                                                    >
+                                                        Back
+                                                    </Button>
+                                                    <Button
+                                                        size="lg"
+                                                        onClick={handleGenerateConcepts}
+                                                        disabled={isGeneratingConcepts || (!uploadedFile && !textDescription.trim())}
+                                                        className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
+                                                    >
+                                                        {isGeneratingConcepts ? 'Generating concepts…' : 'Generate concepts'}
+                                                        <StarsIcon className="h-4 w-4 md:h-5 md:w-5" />
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ReferenceSettings
+                                                    aspectRatio={aspectRatio}
+                                                    onAspectRatioChange={setAspectRatio}
+                                                    refinements={referenceRefinements}
+                                                    onRefinementsChange={setReferenceRefinements}
+                                                />
+                                                <div className="flex items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
+                                                    <Button
+                                                        variant="secondary"
+                                                        onClick={() => setWizardStep(0)}
+                                                        className="rounded-full text-xs md:text-sm px-3 md:px-4"
+                                                    >
+                                                        Back
+                                                    </Button>
+                                                    <Button
+                                                        size="lg"
+                                                        onClick={handleGenerateFromReference}
+                                                        disabled={isLoading || !uploadedFile || !referenceImage || !referenceStyleAnalysis}
+                                                        className="flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-xs md:text-sm"
+                                                    >
+                                                        {isLoading ? 'Generating…' : 'Generate'}
+                                                        <StarsIcon className="h-4 w-4 md:h-5 md:w-5" />
+                                                    </Button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 )}
 
-                                {/* Step 3: Ideas */}
-                                {wizardStep === 2 && (
+                                {/* Step 3: Ideas (AI-guided mode only) */}
+                                {wizardStep === 2 && mode === 'ai-guided' && (
                                     <div className="space-y-4 md:space-y-6">
                                         <ConceptSelection
                                             concepts={concepts}
@@ -455,7 +647,7 @@ const ImageGeneration: React.FC<ImageGenerationProps> = ({ userId, onImageSaved 
                                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 md:gap-3 pt-4 border-t border-white/5">
                                             <Button
                                                 variant="secondary"
-                                                onClick={() => setWizardStep(2)}
+                                                onClick={() => setWizardStep(mode === 'reference-image' ? 1 : 2)}
                                                 className="rounded-full text-xs md:text-sm px-3 md:px-4"
                                             >
                                                 Back

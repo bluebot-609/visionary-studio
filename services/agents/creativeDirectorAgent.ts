@@ -167,6 +167,17 @@ ${preset.placementGuidelines}
 If a model is required, follow these specific pose principles for the "${preset.name}" aesthetic:
 ${preset.poseGuidelines}
 
+${preset.propGuidance ? `
+**PROP & SURROUNDING INTERACTION GUIDANCE**
+- Allowed: ${preset.propGuidance.allowed ? 'Yes - recommended within this preset' : 'No - keep scene prop-free unless functionality demands it'}
+- Philosophy: ${preset.propGuidance.philosophy}
+- Guidelines: ${preset.propGuidance.guidelines}
+- Suggested Props: ${preset.propGuidance.suggestedProps?.join(', ') || 'None'}
+- Abstract-Friendly: ${preset.propGuidance.abstractFriendly ? 'Yes, conceptual or geometric props may be used when aligned with the story.' : 'No, keep props literal or omit them entirely.'}
+
+If props are allowed, determine SPECIFIC supporting props for this product, aligning with the preset philosophy. If props are discouraged, explain why and disable them.
+` : ''}
+
 **YOUR TASK:**
 Analyze the product, selected concept, and this preset's detailed guidelines. Then make intelligent creative decisions that:
 
@@ -265,6 +276,21 @@ ${preset ? `
 ` : ''}
 ` : ''}
 
+**SUPPORTING PROPS REQUIREMENT**
+- Always include a "supportingProps" object in your JSON response.
+- If props enhance this preset/concept, set enabled=true and describe the strategy, provide 3-4 propIdeas, note interaction guidance, and specify whether it should feel "abstract", "literal", or "minimal".
+- If props should be avoided, set enabled=false with a short rationale in the strategy field.
+
+${selectedConcept.modelRequired ? `
+**MODEL EXPRESSION & EMOTIONAL TRANSLATION**
+- Map the campaign mood into a precise emotional cue for the model.
+- Provide micro-expression notes (eyes, mouth, brows) that keep the model human and alive.
+- Define body language cues that reinforce the mood (weight shift, tension vs relaxation, gesture dynamics).
+- Specify gaze direction or focus to anchor the viewer connection.
+- Note the overall energy level ('serene', 'magnetic', 'playful', 'commanding', etc.).
+- Return this in an "expressionGuidance" object so downstream agents and prompts preserve believable emotional nuance.
+` : ''}
+
 Based on the selected concept, make final strategic creative decisions (platform, location, color palette, composition, aspect ratio) and provide your recommendations in JSON format.
 ${isLuxury ? 'Include luxuryVisualGuidelines object with LVI framework variables when applicable.' : ''}
 ${selectedConcept.modelRequired ? 'IMPORTANT: Include productInteraction field with clear spatial guidance for product-model relationship.' : ''}`;
@@ -298,6 +324,26 @@ ${selectedConcept.modelRequired ? 'IMPORTANT: Include productInteraction field w
               texturePriority: { type: Type.STRING },
               colorEmotion: { type: Type.STRING },
               spaceUse: { type: Type.STRING }
+            }
+          },
+          supportingProps: {
+            type: Type.OBJECT,
+            properties: {
+              enabled: { type: Type.BOOLEAN },
+              strategy: { type: Type.STRING },
+              propIdeas: { type: Type.ARRAY, items: { type: Type.STRING } },
+              interactionNotes: { type: Type.STRING },
+              abstractionLevel: { type: Type.STRING }
+            }
+          },
+          expressionGuidance: {
+            type: Type.OBJECT,
+            properties: {
+              emotion: { type: Type.STRING },
+              facialExpression: { type: Type.STRING },
+              bodyLanguage: { type: Type.STRING },
+              gazeDirection: { type: Type.STRING },
+              energyLevel: { type: Type.STRING }
             }
           }
         },

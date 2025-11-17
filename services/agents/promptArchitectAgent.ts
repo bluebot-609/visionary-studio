@@ -64,6 +64,13 @@ const PROMPT_ARCHITECT_SYSTEM_PROMPT = `You are a world-class prompt artist and 
    - NO unrealistic skin smoothness or plastic appearance
    - NO unnatural hair behavior or impossible hair physics
 
+**MOOD & EXPRESSION FIDELITY (if an expression blueprint is provided):**
+1. Translate the provided emotion cue directly into the model's eyes, micro-expressions, and body language.
+2. Reference the facial details guidance explicitly (e.g., "a subtle half-smile softens her lips" or "brows relax to convey calm authority").
+3. Mirror the body language directives (weight shifts, hand gestures, posture tension) so the pose feels alive and intentional.
+4. Honor the specified gaze direction/focus to anchor connection with viewers or the product.
+5. Reinforce the stated energy level through descriptive verbs (e.g., "radiates serene confidence", "crackles with playful energy").
+
 **COMPOSITION RULES:**
 
 1.  Write a single, flowing descriptive paragraph. Do NOT use bullet points, lists, or technical labels (like 'Aperture:').
