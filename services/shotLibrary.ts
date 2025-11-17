@@ -1,36 +1,19 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  where,
-  Timestamp,
-} from 'firebase/firestore';
-import {
-  deleteObject,
-  getDownloadURL,
-  ref,
-  uploadBytes,
-} from 'firebase/storage';
-import { db, storage } from '../lib/firebase';
+import { createClient } from '../lib/supabase';
 import type { GeneratedImage } from '../types';
 
 export interface SavedShot {
-  id: string; // Firestore document ID
+  id: string; // Supabase UUID
   userId: string;
   imageId: string;
   imageUrl: string;
-  timestamp: Timestamp;
+  timestamp: Date;
   fileName: string;
   hue: number;
   saturation: number;
 }
 
 /**
- * Save a generated image to Firebase Storage and Firestore
+ * Save a generated image to Supabase Storage and Postgres
  */
 export const saveShot = async (
   userId: string,
@@ -39,6 +22,8 @@ export const saveShot = async (
   console.log('saveShot called with:', { userId, imageId: generatedImage.id });
   
   try {
+    const supabase = createClient();
+
     // Convert base64 to blob
     console.log('Converting base64 to blob...');
     const base64Response = await fetch(
@@ -50,38 +35,66 @@ export const saveShot = async (
     // Create unique filename
     const timestamp = Date.now();
     const fileName = `${timestamp}-${generatedImage.id}.jpg`;
-    const storagePath = `shots/${userId}/${fileName}`;
+    const storagePath = `${userId}/${fileName}`;
     console.log('Storage path:', storagePath);
 
-    // Upload to Firebase Storage
-    console.log('Uploading to Firebase Storage...');
-    const storageRef = ref(storage, storagePath);
-    const uploadResult = await uploadBytes(storageRef, blob);
-    console.log('Upload successful:', uploadResult);
+    // Upload to Supabase Storage
+    console.log('Uploading to Supabase Storage...');
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('shots')
+      .upload(storagePath, blob, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      });
+
+    if (uploadError) {
+      throw new Error(`Storage upload failed: ${uploadError.message}`);
+    }
+    console.log('Upload successful:', uploadData);
 
     // Get download URL
     console.log('Getting download URL...');
-    const imageUrl = await getDownloadURL(storageRef);
+    const { data: urlData } = supabase.storage
+      .from('shots')
+      .getPublicUrl(storagePath);
+    
+    const imageUrl = urlData.publicUrl;
     console.log('Download URL obtained:', imageUrl);
 
-    // Save metadata to Firestore
+    // Save metadata to Postgres
     const shotData = {
-      userId,
-      imageId: generatedImage.id,
-      imageUrl,
-      timestamp: Timestamp.fromDate(new Date()),
-      fileName,
+      user_id: userId,
+      image_id: generatedImage.id,
+      image_url: imageUrl,
+      file_name: fileName,
       hue: generatedImage.hue,
       saturation: generatedImage.saturation,
     };
 
-    console.log('Saving metadata to Firestore...', shotData);
-    const docRef = await addDoc(collection(db, 'shots'), shotData);
-    console.log('Firestore document created:', docRef.id);
+    console.log('Saving metadata to Postgres...', shotData);
+    const { data: insertData, error: insertError } = await supabase
+      .from('shots')
+      .insert(shotData)
+      .select()
+      .single();
 
-    const savedShot = {
-      id: docRef.id,
-      ...shotData,
+    if (insertError) {
+      // If insert fails, try to clean up the uploaded file
+      await supabase.storage.from('shots').remove([storagePath]);
+      throw new Error(`Database insert failed: ${insertError.message}`);
+    }
+
+    console.log('Postgres record created:', insertData);
+
+    const savedShot: SavedShot = {
+      id: insertData.id,
+      userId: insertData.user_id,
+      imageId: insertData.image_id,
+      imageUrl: insertData.image_url,
+      timestamp: new Date(insertData.created_at),
+      fileName: insertData.file_name,
+      hue: insertData.hue,
+      saturation: insertData.saturation,
     };
     
     console.log('Shot saved successfully:', savedShot);
@@ -92,7 +105,7 @@ export const saveShot = async (
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
-    throw new Error(`Failed to save shot to Firebase: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Failed to save shot to Supabase: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
@@ -103,26 +116,34 @@ export const getUserShots = async (userId: string): Promise<SavedShot[]> => {
   console.log('getUserShots called with userId:', userId);
   
   try {
-    const shotsRef = collection(db, 'shots');
-    const q = query(
-      shotsRef,
-      where('userId', '==', userId),
-      orderBy('timestamp', 'desc'),
-    );
+    const supabase = createClient();
 
-    console.log('Executing Firestore query...');
-    const querySnapshot = await getDocs(q);
-    console.log('Query returned', querySnapshot.size, 'documents');
+    console.log('Executing Postgres query...');
+    const { data, error } = await supabase
+      .from('shots')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Query failed: ${error.message}`);
+    }
+
+    console.log('Query returned', data?.length || 0, 'records');
     
-    const shots: SavedShot[] = [];
-
-    querySnapshot.forEach((doc) => {
-      const shotData = {
-        id: doc.id,
-        ...doc.data(),
-      } as SavedShot;
-      console.log('Processing shot:', shotData.id, shotData.fileName);
-      shots.push(shotData);
+    const shots: SavedShot[] = (data || []).map((row) => {
+      const shot: SavedShot = {
+        id: row.id,
+        userId: row.user_id,
+        imageId: row.image_id,
+        imageUrl: row.image_url,
+        timestamp: new Date(row.created_at),
+        fileName: row.file_name,
+        hue: row.hue,
+        saturation: row.saturation,
+      };
+      console.log('Processing shot:', shot.id, shot.fileName);
+      return shot;
     });
 
     console.log('Returning', shots.length, 'shots');
@@ -133,12 +154,12 @@ export const getUserShots = async (userId: string): Promise<SavedShot[]> => {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
-    throw new Error(`Failed to fetch shots from Firebase: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(`Failed to fetch shots from Supabase: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
 /**
- * Delete multiple shots from both Storage and Firestore
+ * Delete multiple shots from both Storage and Postgres
  */
 export const deleteShots = async (
   userId: string,
@@ -146,28 +167,41 @@ export const deleteShots = async (
   shots: SavedShot[],
 ): Promise<void> => {
   try {
+    const supabase = createClient();
+
     const deletePromises = shotIds.map(async (shotId) => {
       const shot = shots.find((s) => s.id === shotId);
       if (!shot) return;
 
       // Delete from Storage
-      const storagePath = `shots/${userId}/${shot.fileName}`;
-      const storageRef = ref(storage, storagePath);
+      const storagePath = `${userId}/${shot.fileName}`;
       try {
-        await deleteObject(storageRef);
+        const { error: storageError } = await supabase.storage
+          .from('shots')
+          .remove([storagePath]);
+        
+        if (storageError) {
+          console.warn(`Failed to delete storage file: ${storagePath}`, storageError);
+        }
       } catch (error) {
         console.warn(`Failed to delete storage file: ${storagePath}`, error);
       }
 
-      // Delete from Firestore
-      const docRef = doc(db, 'shots', shotId);
-      await deleteDoc(docRef);
+      // Delete from Postgres
+      const { error: dbError } = await supabase
+        .from('shots')
+        .delete()
+        .eq('id', shotId)
+        .eq('user_id', userId); // Extra safety check
+
+      if (dbError) {
+        throw new Error(`Failed to delete from database: ${dbError.message}`);
+      }
     });
 
     await Promise.all(deletePromises);
   } catch (error) {
     console.error('Error deleting shots:', error);
-    throw new Error('Failed to delete shots from Firebase');
+    throw new Error('Failed to delete shots from Supabase');
   }
 };
-

@@ -39,10 +39,8 @@ const ShotLibrary: React.FC<ShotLibraryProps> = ({ userId, refreshTrigger }) => 
         });
         
         // Check for specific errors
-        if (err.message.includes('index')) {
-          setError('Firestore index required. Check console for the link to create it.');
-        } else if (err.message.includes('permission') || err.message.includes('PERMISSION_DENIED')) {
-          setError('Permission denied. Please check Firebase security rules (see FIREBASE_SETUP.md)');
+        if (err.message.includes('permission') || err.message.includes('row-level security') || err.message.includes('RLS')) {
+          setError('Permission denied. Please check Supabase RLS policies (see SUPABASE_SETUP.md)');
         } else {
           setError(`Failed to load shots: ${err.message}`);
         }
@@ -256,13 +254,21 @@ const ShotLibrary: React.FC<ShotLibraryProps> = ({ userId, refreshTrigger }) => 
               {/* Metadata */}
               <div className="px-3 py-2 md:px-4 md:py-3">
                 <p className="text-[10px] md:text-xs text-white/50 truncate">
-                  {new Date(shot.timestamp.toDate()).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
+                  {shot.timestamp instanceof Date 
+                    ? shot.timestamp.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })
+                    : new Date(shot.timestamp).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}
                 </p>
               </div>
             </Card>
@@ -322,13 +328,21 @@ const ShotLibrary: React.FC<ShotLibraryProps> = ({ userId, refreshTrigger }) => 
             />
             <div className="flex items-center justify-between text-xs md:text-sm text-white/60">
               <span>
-                {new Date(viewingShot.timestamp.toDate()).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
+                {viewingShot.timestamp instanceof Date
+                  ? viewingShot.timestamp.toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })
+                  : new Date(viewingShot.timestamp).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}
               </span>
               <Button
                 onClick={() => {

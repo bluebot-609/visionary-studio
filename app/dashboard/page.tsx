@@ -27,14 +27,16 @@ export default function DashboardPage() {
   const mobileProfileDropdownRef = useRef<HTMLDivElement>(null);
 
   const initials = useMemo(() => {
-    if (!user?.displayName) return 'VS';
-    return user.displayName
+    if (!user) return 'VS';
+    const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '';
+    if (!name) return 'VS';
+    return name
       .split(' ')
       .map((part) => part[0])
       .join('')
       .slice(0, 2)
       .toUpperCase();
-  }, [user?.displayName]);
+  }, [user]);
 
   // Redirect to landing page if user is not authenticated
   useEffect(() => {
@@ -206,7 +208,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex flex-col text-xs text-white/60">
                   <span className="text-sm text-white">
-                    {user?.displayName ?? user?.email ?? 'Creator'}
+                    {user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? 'Creator'}
                   </span>
                   <span>Studio access</span>
                 </div>
@@ -302,7 +304,7 @@ export default function DashboardPage() {
                       onClick={async () => {
                         setIsProfileDropdownOpen(false);
                         try {
-                          // Wait for signOut to complete (clears cookie and Firebase auth)
+                          // Wait for signOut to complete (clears Supabase session)
                           await signOut();
                           // Small delay to ensure cookie is cleared and state updates
                           await new Promise(resolve => setTimeout(resolve, 150));
@@ -357,7 +359,7 @@ export default function DashboardPage() {
                       onClick={async () => {
                         setIsProfileDropdownOpen(false);
                         try {
-                          // Wait for signOut to complete (clears cookie and Firebase auth)
+                          // Wait for signOut to complete (clears Supabase session)
                           await signOut();
                           // Small delay to ensure cookie is cleared and state updates
                           await new Promise(resolve => setTimeout(resolve, 150));
@@ -397,13 +399,13 @@ export default function DashboardPage() {
 
           <div className={activeView === 'dashboard' ? 'block' : 'hidden'}>
             <DashboardMain 
-              userId={user?.uid} 
+              userId={user?.id} 
               onImageSaved={() => setRefreshLibrary(prev => prev + 1)}
             />
           </div>
           <div className={activeView === 'shot-library' ? 'block' : 'hidden'}>
             <ShotLibrary 
-              userId={user?.uid ?? ''} 
+              userId={user?.id ?? ''} 
               refreshTrigger={refreshLibrary}
             />
           </div>

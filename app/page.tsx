@@ -86,7 +86,7 @@ const plans = [
 ];
 
 export default function LandingPage() {
-  const { user, signIn, loading } = useAuth();
+  const { user, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function LandingPage() {
               size="sm" 
               onClick={(e) => {
                 e.preventDefault();
-                signIn();
+                signInWithGoogle();
               }} 
               disabled={loading} 
               className="flex-1 sm:flex-none"
@@ -136,7 +136,7 @@ export default function LandingPage() {
             <Button 
               onClick={(e) => {
                 e.preventDefault();
-                signIn();
+                signInWithGoogle();
               }} 
               disabled={loading} 
               className="flex-1 sm:flex-none"
@@ -178,7 +178,7 @@ export default function LandingPage() {
                   size="lg" 
                   onClick={(e) => {
                     e.preventDefault();
-                    signIn();
+                    signInWithGoogle();
                   }} 
                   disabled={loading} 
                   className="w-full sm:w-auto"
@@ -192,7 +192,7 @@ export default function LandingPage() {
                   size="lg" 
                   onClick={(e) => {
                     e.preventDefault();
-                    signIn();
+                    signInWithGoogle();
                   }} 
                   className="w-full sm:w-auto"
                   type="button"
@@ -364,7 +364,7 @@ export default function LandingPage() {
                   variant={plan.featured ? 'primary' : 'secondary'}
                   onClick={(e) => {
                     e.preventDefault();
-                    signIn();
+                    signInWithGoogle();
                   }}
                   type="button"
                 >
