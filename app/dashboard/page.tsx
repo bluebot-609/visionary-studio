@@ -3,7 +3,7 @@
 import { Gauge, Library, LogOut, Sparkles, Menu, X, ChevronDown } from 'lucide-react';
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import ImageGeneration from '../../components/ImageGeneration';
+import { DashboardMain } from '../../components/dashboard/DashboardMain';
 import ShotLibrary from '../../components/ShotLibrary';
 import { useAuth } from '../../hooks/use-auth';
 import { useRazorpayCheckout } from '../../hooks/use-razorpay-checkout';
@@ -27,14 +27,16 @@ export default function DashboardPage() {
   const mobileProfileDropdownRef = useRef<HTMLDivElement>(null);
 
   const initials = useMemo(() => {
-    if (!user?.displayName) return 'VS';
-    return user.displayName
+    if (!user) return 'VS';
+    const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '';
+    if (!name) return 'VS';
+    return name
       .split(' ')
       .map((part) => part[0])
       .join('')
       .slice(0, 2)
       .toUpperCase();
-  }, [user?.displayName]);
+  }, [user]);
 
   // Redirect to landing page if user is not authenticated
   useEffect(() => {
@@ -206,7 +208,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex flex-col text-xs text-white/60">
                   <span className="text-sm text-white">
-                    {user?.displayName ?? user?.email ?? 'Creator'}
+                    {user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email ?? 'Creator'}
                   </span>
                   <span>Studio access</span>
                 </div>
@@ -235,7 +237,7 @@ export default function DashboardPage() {
 
       <main className="relative flex-1">
         <header className="sticky top-0 z-20 border-b border-white/5 bg-black/40 backdrop-blur-2xl">
-          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 md:px-8 md:py-6 lg:py-8">
+          <div className="mx-auto flex w-full items-center justify-between gap-4 px-3 py-4 sm:px-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
@@ -302,7 +304,7 @@ export default function DashboardPage() {
                       onClick={async () => {
                         setIsProfileDropdownOpen(false);
                         try {
-                          // Wait for signOut to complete (clears cookie and Firebase auth)
+                          // Wait for signOut to complete (clears Supabase session)
                           await signOut();
                           // Small delay to ensure cookie is cleared and state updates
                           await new Promise(resolve => setTimeout(resolve, 150));
@@ -357,7 +359,7 @@ export default function DashboardPage() {
                       onClick={async () => {
                         setIsProfileDropdownOpen(false);
                         try {
-                          // Wait for signOut to complete (clears cookie and Firebase auth)
+                          // Wait for signOut to complete (clears Supabase session)
                           await signOut();
                           // Small delay to ensure cookie is cleared and state updates
                           await new Promise(resolve => setTimeout(resolve, 150));
@@ -382,7 +384,7 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-6xl px-3 pb-12 pt-6 sm:px-4 sm:pb-16 sm:pt-12 md:px-8">
+        <div className="mx-auto w-full max-w-[100vw] px-3 pb-12 pt-6 sm:px-4 sm:pb-16 sm:pt-12 md:px-6 lg:px-8">
           {paymentError && (
             <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-200 backdrop-blur sm:mb-8 sm:rounded-3xl sm:px-5 sm:py-4 sm:text-sm md:text-sm">
               {paymentError}
@@ -396,14 +398,14 @@ export default function DashboardPage() {
           )}
 
           <div className={activeView === 'dashboard' ? 'block' : 'hidden'}>
-            <ImageGeneration 
-              userId={user?.uid} 
+            <DashboardMain 
+              userId={user?.id} 
               onImageSaved={() => setRefreshLibrary(prev => prev + 1)}
             />
           </div>
           <div className={activeView === 'shot-library' ? 'block' : 'hidden'}>
             <ShotLibrary 
-              userId={user?.uid ?? ''} 
+              userId={user?.id ?? ''} 
               refreshTrigger={refreshLibrary}
             />
           </div>

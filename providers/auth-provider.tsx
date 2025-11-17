@@ -9,18 +9,15 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { onAuthStateChanged, getIdToken } from 'firebase/auth';
-import {
-  auth,
-  signInWithGoogle,
-  signOutFromFirebase,
-  type User,
-} from '../lib/firebase';
+import { createClient } from '../lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
-  signIn: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithPhone: (phone: string) => Promise<void>;
+  verifyPhoneOtp: (phone: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -29,80 +26,102 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
-      setUser(nextUser);
-      
-      // Set or clear auth cookie based on user state
-      if (nextUser) {
-        try {
-          // Get ID token and set it in cookie via API route
-          const idToken = await getIdToken(nextUser);
-          await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken }),
-          });
-        } catch (error) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Error setting auth session:', error);
-          }
-        }
-      } else {
-        // Clear auth cookie on logout
-        try {
-          await fetch('/api/auth/session', {
-            method: 'DELETE',
-          });
-        } catch (error) {
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Error clearing auth session:', error);
-          }
-        }
-      }
-      
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       setLoading(false);
     });
-    return unsubscribe;
-  }, []);
 
-  const signIn = useCallback(async () => {
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
-      await signInWithGoogle();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [supabase]);
+
+  const signInWithPhone = useCallback(async (phone: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone,
+        options: {
+          channel: 'sms',
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
+  const verifyPhoneOtp = useCallback(async (phone: string, token: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone,
+        token,
+        type: 'sms',
+      });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
 
   const signOut = useCallback(async () => {
     setLoading(true);
     try {
-      // Clear cookie first, then sign out from Firebase
-      try {
-        await fetch('/api/auth/session', {
-          method: 'DELETE',
-        });
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error clearing auth session:', error);
-        }
-      }
-      await signOutFromFirebase();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [supabase]);
 
   const value = useMemo(
     () => ({
       user,
       loading,
-      signIn,
+      signInWithGoogle,
+      signInWithPhone,
+      verifyPhoneOtp,
       signOut,
     }),
-    [user, loading, signIn, signOut],
+    [user, loading, signInWithGoogle, signInWithPhone, verifyPhoneOtp, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -115,6 +134,3 @@ export const useAuthContext = () => {
   }
   return context;
 };
-
-
-

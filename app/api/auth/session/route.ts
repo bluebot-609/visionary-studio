@@ -1,52 +1,49 @@
+import { createClient } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * API route to set auth session cookie
- * Called from client after successful Firebase authentication
+ * API route to get current session
+ * Used by middleware and client-side auth checks
  */
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { idToken } = body;
+    const supabase = await createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (!idToken) {
-      return NextResponse.json(
-        { error: 'ID token is required' },
-        { status: 400 }
-      );
+    if (!session) {
+      return NextResponse.json({ user: null }, { status: 401 });
     }
 
-    // Set httpOnly cookie with ID token
-    // In production, you should verify this token with Firebase Admin SDK
-    const response = NextResponse.json({ success: true });
-    
-    response.cookies.set('auth-token', idToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-    });
-
-    return response;
+    return NextResponse.json({ user: session.user });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
-      console.error('Error setting auth session:', error);
+      console.error('Error getting session:', error);
     }
     return NextResponse.json(
-      { error: 'Failed to set session' },
+      { error: 'Failed to get session' },
       { status: 500 }
     );
   }
 }
 
 /**
- * API route to clear auth session cookie
+ * API route to clear auth session
  * Called from client on logout
  */
 export async function DELETE(request: NextRequest) {
-  const response = NextResponse.json({ success: true });
-  response.cookies.delete('auth-token');
-  return response;
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error clearing session:', error);
+    }
+    return NextResponse.json(
+      { error: 'Failed to clear session' },
+      { status: 500 }
+    );
+  }
 }
-
