@@ -150,8 +150,9 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
       if (result.credits?.deducted) {
         await refreshCredits();
       }
-    } catch (e: any) {
-      setError(e.message || 'An unexpected error occurred.');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'An unexpected error occurred.';
+      setError(message);
       setCurrentView('input');
     } finally {
       setIsLoading(false);
@@ -213,8 +214,9 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
 
       const data = await response.json();
       setCreativeConcepts(data.concepts);
-    } catch (e: any) {
-      setError(e.message || 'An unexpected error occurred.');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'An unexpected error occurred.';
+      setError(message);
       setCurrentView('input');
     } finally {
       setIsGeneratingConcepts(false);
@@ -278,8 +280,9 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
       if (result.credits?.deducted) {
         await refreshCredits();
       }
-    } catch (e: any) {
-      setError(e.message || 'An unexpected error occurred.');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'An unexpected error occurred.';
+      setError(message);
       setCurrentView(creativeConcepts ? 'concepts' : 'input');
     } finally {
       setIsLoading(false);
@@ -386,8 +389,9 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
 
       await saveShot(userId, generatedImage);
       onImageSaved?.();
-    } catch (e: any) {
-      setError(e.message || 'Failed to save to library');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Failed to save to library';
+      setError(message);
     }
   }, [generatedContent, userId, onImageSaved]);
 

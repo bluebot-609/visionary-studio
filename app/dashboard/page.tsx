@@ -1,7 +1,7 @@
 'use client';
 
 import { Gauge, Library, Power, Menu, X, ChevronDown, Coins, ShoppingCart } from 'lucide-react';
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardMain } from '../../components/dashboard/DashboardMain';
 import ShotLibrary from '../../components/ShotLibrary';
@@ -17,7 +17,7 @@ const navItems: { label: string; icon: typeof Gauge; view: ViewType }[] = [
   { label: 'Shot Library', icon: Library, view: 'shot-library' },
 ];
 
-export default function DashboardPage() {
+function DashboardPageInner() {
   const { user, signOut, loading } = useAuth();
   const { balance, loading: creditsLoading } = useCredits();
   const router = useRouter();
@@ -452,5 +452,22 @@ export default function DashboardPage() {
         onClose={() => setIsCreditModalOpen(false)}
       />
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-accent/30 border-t-accent" />
+            <p className="text-sm text-white/60">Loading dashboard...</p>
+          </div>
+        </div>
+      }
+    >
+      <DashboardPageInner />
+    </Suspense>
   );
 }

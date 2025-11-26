@@ -1,5 +1,10 @@
 import { useCallback, useState } from 'react';
-import { uploadFileWithProgress, type UploadProgress } from '../services/storage';
+
+type UploadProgress = {
+  bytesTransferred: number;
+  totalBytes: number;
+  progress: number;
+};
 
 interface UploadState extends UploadProgress {
   path?: string;
@@ -9,13 +14,18 @@ export const useUpload = () => {
   const [state, setState] = useState<UploadState | null>(null);
 
   const upload = useCallback(
-    (file: File, path: string, metadata?: Parameters<typeof uploadFileWithProgress>[2]) =>
-      uploadFileWithProgress(
-        file,
+    async (file: File, path: string, _metadata?: unknown): Promise<void> => {
+      console.warn('[useUpload] upload called but no storage backend is configured.', {
+        fileName: file.name,
         path,
-        metadata,
-        (snapshot) => setState({ ...snapshot, path }),
-      ),
+      });
+      setState({
+        path,
+        bytesTransferred: 0,
+        totalBytes: file.size,
+        progress: 0,
+      });
+    },
     [],
   );
 

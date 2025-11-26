@@ -79,7 +79,11 @@ export const useRazorpayCheckout = () => {
           description: payload.planId ?? 'Studio Subscription',
           order_id: order.orderId,
           prefill: {
-            name: payload.customer?.name ?? user?.displayName ?? undefined,
+            name:
+              payload.customer?.name ??
+              (user?.user_metadata?.full_name ||
+                user?.user_metadata?.name ||
+                undefined),
             email: payload.customer?.email ?? user?.email ?? undefined,
             contact: payload.customer?.contact ?? undefined,
           },

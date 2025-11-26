@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Get client IP from request headers (handled by Vercel/proxy)
     const forwardedFor = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
-    const rawIp = forwardedFor?.split(',')[0]?.trim() || realIp || request.ip || '';
+    const rawIp = forwardedFor?.split(',')[0]?.trim() || realIp || '';
 
     const isPrivateIp =
       !rawIp ||
