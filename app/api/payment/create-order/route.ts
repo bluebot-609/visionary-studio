@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     });
 
     const options = {
-      amount: Math.round(amount * 100), // Convert to paise
+      amount: Math.round(amount * 100), // Convert to smallest currency unit (paise for INR, cents for USD)
       currency,
       receipt: receipt || `receipt_${Date.now()}`,
       notes: {

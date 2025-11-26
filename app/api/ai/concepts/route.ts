@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateCreativeConcepts } from '../../../../services/geminiService';
-import type { UploadedFile } from '../../../../types';
+import type { UploadedFile, ShotType } from '../../../../types';
 
 const fileToImageData = (file: UploadedFile) => {
   return {
@@ -15,6 +15,9 @@ export async function POST(request: NextRequest) {
       productImage: UploadedFile;
       theme?: string;
       prompt?: string;
+      isProMode?: boolean;
+      autoGenerateText?: boolean;
+      shotType?: ShotType;
     };
 
     if (!body.productImage) {
@@ -25,7 +28,14 @@ export async function POST(request: NextRequest) {
     }
 
     const imageData = fileToImageData(body.productImage);
-    const concepts = await generateCreativeConcepts(imageData, body.theme, body.prompt);
+    const concepts = await generateCreativeConcepts(
+      imageData,
+      body.theme,
+      body.prompt,
+      body.isProMode ?? false,
+      body.autoGenerateText ?? false,
+      body.shotType || 'product',
+    );
 
     return NextResponse.json({ concepts });
   } catch (error) {

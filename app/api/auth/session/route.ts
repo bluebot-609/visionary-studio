@@ -35,8 +35,29 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = await createClient();
-    await supabase.auth.signOut();
-    return NextResponse.json({ success: true });
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      throw error;
+    }
+
+    // Create a response that clears the auth cookies
+    const response = NextResponse.json({ success: true });
+    
+    // Get all cookies and clear Supabase-related ones
+    const allCookies = request.cookies.getAll();
+    allCookies.forEach((cookie) => {
+      // Clear any cookie that starts with sb- (Supabase cookies)
+      if (cookie.name.startsWith('sb-')) {
+        response.cookies.set(cookie.name, '', {
+          expires: new Date(0),
+          path: '/',
+          sameSite: 'lax',
+        });
+      }
+    });
+
+    return response;
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('Error clearing session:', error);

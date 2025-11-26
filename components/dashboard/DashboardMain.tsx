@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { InputPanel } from './InputPanel';
 import { OutputPanel } from './OutputPanel';
-import type { CreativeConcept, GeneratedContent, ImageData } from '../../types';
+import type { CreativeConcept, GeneratedContent, ImageData, ShotType } from '../../types';
 import { saveShot } from '../../services/shotLibrary';
 import type { GeneratedImage } from '../../types';
+import { useCredits } from '../../hooks/use-credits';
 
 type ViewState = 'input' | 'concepts' | 'generated';
 
@@ -22,15 +23,8 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.onerror = (error) => reject(error);
   });
 
-const fileToImageData = async (file: File): Promise<ImageData> => {
-  const base64 = await fileToBase64(file);
-  return {
-    mimeType: file.type,
-    data: base64,
-  };
-};
-
 export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSaved }) => {
+  const { balance, loading: creditsLoading, refresh: refreshCredits } = useCredits();
   const [productImage, setProductImage] = useState<File | null>(null);
   const [referenceImage, setReferenceImage] = useState<File | null>(null);
   const [prompt, setPrompt] = useState<string>('');
@@ -44,11 +38,24 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
   const [creativeConcepts, setCreativeConcepts] = useState<CreativeConcept[] | null>(null);
   const [selectedConcept, setSelectedConcept] = useState<CreativeConcept | null>(null);
   const [aspectRatio, setAspectRatio] = useState<'1:1' | '9:16' | '4:3' | '3:4' | '16:9'>('1:1');
+  const [shotType, setShotType] = useState<ShotType>('product');
+
+  // New state for reference-style controls
+  const [isProMode, setIsProMode] = useState<boolean>(false);
+  const [resolution, setResolution] = useState<'1K' | '2K' | '4K'>('1K');
+  const [overlayText, setOverlayText] = useState('');
+  const [autoGenerateText, setAutoGenerateText] = useState<boolean>(false);
 
   const [currentView, setCurrentView] = useState<ViewState>('input');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGeneratingConcepts, setIsGeneratingConcepts] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Credit cost: Standard = 1, Pro 1K/2K = 3, Pro 4K = 4
+  const creditCost = useMemo(() => {
+    if (!isProMode) return 1;
+    return resolution === '4K' ? 4 : 3;
+  }, [isProMode, resolution]);
 
   const handleProductImageChange = (file: File | null) => {
     if (productImagePreview) {
@@ -88,10 +95,13 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
       return;
     }
 
+    if (!creditsLoading && balance < creditCost) {
+      setError(`You need ${creditCost} credits for this render, but only have ${balance}.`);
+      return;
+    }
+
     setError(null);
     setGeneratedContent(null);
-    // Don't clear concepts - preserve them
-    // setCreativeConcepts(null);
     setIsLoading(true);
     setCurrentView('generated');
 
@@ -103,9 +113,6 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
       if (theme) {
         combinedPrompt = `Use a "${theme}" theme. ${combinedPrompt}`.trim();
       }
-
-      const productImageData = await fileToImageData(productImage);
-      const referenceImageData = referenceImage ? await fileToImageData(referenceImage) : null;
 
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
@@ -123,7 +130,12 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
           } : undefined,
           prompt: combinedPrompt,
           modelAppearance: modelAppearance || undefined,
-          aspectRatio: aspectRatio,
+          aspectRatio,
+          isProMode,
+          resolution,
+          textOverlay: overlayText.trim() || undefined,
+          autoGenerateText,
+          shotType,
         }),
       });
 
@@ -133,17 +145,34 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
       }
 
       const result = await response.json();
-      setGeneratedContent({
-        image: `data:image/png;base64,${result.image}`,
-        description: result.description || '',
-      });
+      setGeneratedContent(result as GeneratedContent);
+
+      if (result.credits?.deducted) {
+        await refreshCredits();
+      }
     } catch (e: any) {
       setError(e.message || 'An unexpected error occurred.');
       setCurrentView('input');
     } finally {
       setIsLoading(false);
     }
-  }, [productImage, referenceImage, prompt, theme, modelAppearance, aspectRatio]);
+  }, [
+    productImage,
+    referenceImage,
+    prompt,
+    theme,
+    modelAppearance,
+    aspectRatio,
+    isProMode,
+    resolution,
+    overlayText,
+    autoGenerateText,
+    shotType,
+    creditCost,
+    balance,
+    creditsLoading,
+    refreshCredits,
+  ]);
 
   const handleGenerateConceptsClick = useCallback(async () => {
     if (!productImage) {
@@ -171,6 +200,9 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
           },
           theme: theme || undefined,
           prompt: prompt || undefined,
+          isProMode,
+          autoGenerateText,
+          shotType,
         }),
       });
 
@@ -187,17 +219,20 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
     } finally {
       setIsGeneratingConcepts(false);
     }
-  }, [productImage, theme, prompt]);
+  }, [productImage, theme, prompt, isProMode, autoGenerateText, shotType]);
 
   const handleConceptSelect = useCallback((concept: CreativeConcept) => {
     setSelectedConcept(concept);
     setError(null);
-    // Don't clear concepts - preserve them for navigation back
-    // Don't navigate immediately - let user click generate button
   }, []);
 
   const handleGenerateFromConcept = useCallback(async () => {
     if (!productImage || !selectedConcept) return;
+
+    if (!creditsLoading && balance < creditCost) {
+      setError(`You need ${creditCost} credits for this render, but only have ${balance}.`);
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -206,6 +241,12 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
     try {
       const fullConceptPrompt = `Title: ${selectedConcept.title}. Scene: ${selectedConcept.scene_description}. Lighting: ${selectedConcept.lighting}. Arrangement: ${selectedConcept.product_arrangement}. Mood: ${selectedConcept.mood}.`;
       const productImageBase64 = await fileToBase64(productImage);
+
+      // Use text overlay suggestion from concept if autoGenerateText is enabled
+      let conceptTextOverlay = overlayText;
+      if (isProMode && autoGenerateText && selectedConcept.text_overlay_suggestion) {
+        conceptTextOverlay = selectedConcept.text_overlay_suggestion.text_content;
+      }
 
       const response = await fetch('/api/ai/generate', {
         method: 'POST',
@@ -217,7 +258,12 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
             base64: productImageBase64,
           },
           prompt: fullConceptPrompt,
-          aspectRatio: aspectRatio,
+          aspectRatio,
+          isProMode,
+          resolution,
+          textOverlay: conceptTextOverlay?.trim() || undefined,
+          autoGenerateText,
+          shotType,
         }),
       });
 
@@ -227,17 +273,32 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
       }
 
       const result = await response.json();
-      setGeneratedContent({
-        image: `data:image/png;base64,${result.image}`,
-        description: result.description || '',
-      });
+      setGeneratedContent(result as GeneratedContent);
+
+      if (result.credits?.deducted) {
+        await refreshCredits();
+      }
     } catch (e: any) {
       setError(e.message || 'An unexpected error occurred.');
       setCurrentView(creativeConcepts ? 'concepts' : 'input');
     } finally {
       setIsLoading(false);
     }
-  }, [productImage, selectedConcept, aspectRatio, creativeConcepts]);
+  }, [
+    productImage,
+    selectedConcept,
+    aspectRatio,
+    creativeConcepts,
+    isProMode,
+    resolution,
+    overlayText,
+    autoGenerateText,
+    shotType,
+    creditCost,
+    balance,
+    creditsLoading,
+    refreshCredits,
+  ]);
 
   const handleBack = useCallback(() => {
     if (currentView === 'generated') {
@@ -264,6 +325,11 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
     setTheme('');
     setModelAppearance('');
     setAspectRatio('1:1');
+    setIsProMode(false);
+    setResolution('1K');
+    setOverlayText('');
+    setAutoGenerateText(false);
+    setShotType('product');
     setProductImagePreview(null);
     setReferenceImagePreview(null);
     setGeneratedContent(null);
@@ -275,7 +341,6 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
     setIsGeneratingConcepts(false);
   }, [productImagePreview, referenceImagePreview]);
 
-  // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       if (productImagePreview) {
@@ -287,15 +352,23 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
     };
   }, [productImagePreview, referenceImagePreview]);
 
+  // Warn user if they try to refresh/close during generation
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isLoading || isGeneratingConcepts) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isLoading, isGeneratingConcepts]);
+
   const handleBackToConcepts = useCallback(() => {
     if (creativeConcepts) {
       setCurrentView('concepts');
     }
   }, [creativeConcepts]);
-
-  const handleGenerateNewConcepts = useCallback(() => {
-    handleGenerateConceptsClick();
-  }, [handleGenerateConceptsClick]);
 
   const handleSaveToLibrary = useCallback(async () => {
     if (!generatedContent || !userId) return;
@@ -303,7 +376,9 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
     try {
       const generatedImage: GeneratedImage = {
         id: `generated-${Date.now()}`,
-        base64: generatedContent.image.split(',')[1] || generatedContent.image,
+        base64: generatedContent.imageUrl
+          ? generatedContent.imageUrl.split(',')[1] || generatedContent.imageUrl
+          : '',
         captions: null,
         hue: 0,
         saturation: 100,
@@ -317,7 +392,7 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
   }, [generatedContent, userId, onImageSaved]);
 
   return (
-    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+    <div className="w-full max-w-[1800px] mx-auto px-4 pt-8 pb-4 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start min-w-0 overflow-hidden">
       <InputPanel
         productImage={productImage}
         referenceImage={referenceImage}
@@ -326,18 +401,30 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
         prompt={prompt}
         theme={theme}
         modelAppearance={modelAppearance}
+        shotType={shotType}
         aspectRatio={aspectRatio}
         onProductImageChange={handleProductImageChange}
         onReferenceImageChange={handleReferenceImageChange}
         onPromptChange={setPrompt}
         onThemeChange={setTheme}
         onModelAppearanceChange={setModelAppearance}
+        onShotTypeChange={setShotType}
         onAspectRatioChange={setAspectRatio}
         onGenerateClick={handleGenerateClick}
         onGenerateConceptsClick={handleGenerateConceptsClick}
         isLoading={isLoading}
         isGeneratingConcepts={isGeneratingConcepts}
         error={error}
+        isProMode={isProMode}
+        onProModeChange={setIsProMode}
+        resolution={resolution}
+        onResolutionChange={setResolution}
+        overlayText={overlayText}
+        onOverlayTextChange={setOverlayText}
+        autoGenerateText={autoGenerateText}
+        onAutoGenerateTextChange={setAutoGenerateText}
+        availableCredits={balance}
+        creditsLoading={creditsLoading}
       />
       <OutputPanel
         currentView={currentView}
@@ -352,8 +439,8 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
         onStartNewProject={handleStartNewProject}
         onBackToConcepts={handleBackToConcepts}
         onSaveToLibrary={handleSaveToLibrary}
+        isProMode={isProMode}
       />
     </div>
   );
 };
-

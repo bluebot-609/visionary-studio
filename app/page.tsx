@@ -16,6 +16,10 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { useAuth } from '../hooks/use-auth';
+import { PricingSection } from '../components/PricingSection';
+import { MagneticButton } from '../components/MagneticButton';
+import { GlowCard } from '../components/GlowCard';
+import { ShowcaseSection } from '../components/showcase/ShowcaseSection';
 
 const heroVariants = {
   hidden: { opacity: 0, y: 24 },
@@ -52,36 +56,9 @@ const testimonials = [
   },
   {
     quote:
-      'Our launch had 4X social traction after running Visionary renders. The lighting fidelity is insane.',
+      'Our launch had 4X social traction after running AdShotAI renders. The lighting fidelity is insane.',
     name: 'Kabir Mehta',
     role: 'Creative at Laguna Maison',
-  },
-];
-
-const plans = [
-  {
-    name: 'Essentials',
-    price: '₹0',
-    cadence: 'Trial • 7 days',
-    description: 'Perfect to explore art direction flows and test renders.',
-    highlights: [
-      '10 guided renders / day',
-      'Reference-to-render pipeline',
-      'Vision board generator',
-    ],
-  },
-  {
-    name: 'Pro Studio',
-    price: '₹2,499',
-    cadence: 'Monthly',
-    description: 'Unlock premium lighting rigs, batch renders, and brand libraries.',
-    highlights: [
-      'Unlimited renders',
-      'Advanced lighting templates',
-      'Brand mood archive & shot library',
-      'Priority Razorpay billing support',
-    ],
-    featured: true,
   },
 ];
 
@@ -105,40 +82,40 @@ export default function LandingPage() {
       <BackgroundBlobs />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(124,208,255,0.12),_transparent_60%)]" />
       <div className="relative z-10">
-        <header className="mx-auto flex w-full max-w-screen-2xl flex-col items-start gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-6 md:px-8 lg:px-12 xl:px-16">
+        <header className="sticky top-6 z-50 mx-auto flex w-[95%] max-w-5xl flex-col items-start gap-4 rounded-full border border-white/10 bg-black/60 px-6 py-4 backdrop-blur-xl transition-all duration-300 sm:w-fit sm:flex-row sm:items-center sm:justify-between sm:gap-12 shadow-2xl shadow-black/20">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-lg font-bold text-white sm:h-12 sm:w-12 sm:text-2xl">
-              VS
+              AS
             </div>
             <div className="flex flex-col">
               <span className="font-display text-base leading-tight text-white sm:text-lg">
-                Visionary Studio
+                AdShotAI
               </span>
               <span className="text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-xs sm:tracking-[0.25em]">
-                Crafted for premium brands
+                AI Product Photography
               </span>
             </div>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={(e) => {
                 e.preventDefault();
                 signInWithGoogle();
-              }} 
-              disabled={loading} 
+              }}
+              disabled={loading}
               className="flex-1 sm:flex-none"
               type="button"
             >
               {loading ? 'Launching…' : 'Sign in'}
             </Button>
-            <Button 
+            <Button
               onClick={(e) => {
                 e.preventDefault();
                 signInWithGoogle();
-              }} 
-              disabled={loading} 
+              }}
+              disabled={loading}
               className="flex-1 sm:flex-none"
               type="button"
             >
@@ -167,33 +144,33 @@ export default function LandingPage() {
                 variants={heroVariants}
                 className="max-w-2xl text-sm text-white/80 sm:text-base md:text-lg lg:text-xl"
               >
-                Visionary Studio pairs AI guidance with cinematic lighting, pro styling,
+                AdShotAI pairs AI guidance with cinematic lighting, pro styling,
                 and intuitive editing—so every render feels editorial-worthy.
               </motion.p>
               <motion.div
                 variants={heroVariants}
                 className="flex flex-col items-stretch gap-3 text-sm text-white/70 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
               >
-                <Button 
-                  size="lg" 
+                <MagneticButton
+                  size="lg"
                   onClick={(e) => {
                     e.preventDefault();
                     signInWithGoogle();
-                  }} 
-                  disabled={loading} 
+                  }}
+                  disabled={loading}
                   className="w-full sm:w-auto"
                   type="button"
                 >
                   {loading ? 'Preparing your studio…' : 'Launch the Studio'}
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  size="lg" 
+                </MagneticButton>
+                <Button
+                  variant="secondary"
+                  size="lg"
                   onClick={(e) => {
                     e.preventDefault();
                     signInWithGoogle();
-                  }} 
+                  }}
                   className="w-full sm:w-auto"
                   type="button"
                 >
@@ -212,13 +189,13 @@ export default function LandingPage() {
               transition={{ delay: 0.4, duration: 0.6 }}
             >
               {features.map((feature) => (
-                <Card key={feature.title} className="bg-white/[0.03] p-5 sm:p-6">
+                <GlowCard key={feature.title} className="bg-white/[0.03] p-5 sm:p-6">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white sm:h-12 sm:w-12">
                     <feature.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <h3 className="mt-4 font-display text-lg text-white sm:mt-6 sm:text-xl">{feature.title}</h3>
                   <p className="mt-2 text-xs text-white/70 sm:mt-3 sm:text-sm">{feature.description}</p>
-                </Card>
+                </GlowCard>
               ))}
             </motion.div>
           </section>
@@ -252,7 +229,7 @@ export default function LandingPage() {
                     icon: Camera,
                   },
                 ].map((step) => (
-                  <Card
+                  <GlowCard
                     key={step.title}
                     className="relative overflow-hidden bg-white/[0.05] p-5 transition hover:translate-y-[-6px] hover:bg-white/[0.08] sm:p-6"
                   >
@@ -261,27 +238,26 @@ export default function LandingPage() {
                     </div>
                     <h3 className="mt-4 text-sm font-semibold text-white sm:mt-5 sm:text-base">{step.title}</h3>
                     <p className="mt-2 text-xs text-white/65 sm:mt-3 sm:text-sm">{step.copy}</p>
-                  </Card>
+                  </GlowCard>
                 ))}
               </div>
             </div>
             <div className="flex flex-col gap-4 rounded-[24px] border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.02] to-transparent p-6 backdrop-blur-xl sm:gap-6 sm:rounded-[32px] sm:p-8 md:rounded-[36px] md:p-10">
               <Badge variant="accent" className="self-start text-[10px] tracking-[0.3em] sm:text-xs sm:tracking-[0.4em]">
-                Styling layers
+                Key Features
               </Badge>
               <h3 className="font-display text-xl leading-tight text-white sm:text-2xl md:text-3xl">
-                Build cohesive campaigns with modular shot libraries.
+                Everything you need for professional product photography.
               </h3>
               <p className="text-xs text-white/70 sm:text-sm">
-                Save your best looks, lighting moods, and set compositions. Re-run future
-                drops with that same signature feel—no reshoots required.
+                Generate professional images with AI-powered creative concepts, reference-based rendering, and flexible aspect ratios—all in one place.
               </p>
               <div className="grid gap-2 sm:gap-3">
                 {[
-                  'Instant brand-lighting presets',
-                  'Product + lifestyle pairings',
-                  'AI styling assistant for every render',
-                  'Campaign storyboard exports',
+                  'AI-generated creative concepts',
+                  'Reference image-based rendering',
+                  'Multiple aspect ratio options',
+                  'Save images to your library',
                 ].map((item) => (
                   <div
                     key={item}
@@ -297,14 +273,17 @@ export default function LandingPage() {
                 className="mt-4 w-full self-start sm:mt-6 sm:w-auto"
                 onClick={(e) => {
                   e.preventDefault();
-                  signIn();
+                  signInWithGoogle();
                 }}
                 type="button"
               >
-                Explore the Studio
+                Start Creating
               </Button>
             </div>
           </section>
+
+          {/* Showcase Section */}
+          <ShowcaseSection />
 
           <section className="grid gap-6 sm:gap-8 lg:grid-cols-2">
             {testimonials.map((testimonial) => (
@@ -327,51 +306,20 @@ export default function LandingPage() {
             ))}
           </section>
 
-          <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr,1fr]">
-            {plans.map((plan) => (
-              <Card
-                key={plan.name}
-                className={`p-6 sm:p-8 md:p-10 ${plan.featured ? 'border-white/20 bg-white/[0.08]' : 'bg-white/[0.04]'}`}
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                  <div>
-                    <h3 className="font-display text-xl text-white sm:text-2xl">{plan.name}</h3>
-                    <p className="mt-2 text-xs text-white/65 sm:text-sm">{plan.description}</p>
-                  </div>
-                  {plan.featured && (
-                    <Badge variant="accent" className="self-start text-[10px] tracking-[0.3em] text-slate-950 sm:self-center sm:text-xs sm:tracking-[0.4em]">
-                      Most loved
-                    </Badge>
-                  )}
-                </div>
-                <div className="mt-6 flex items-baseline gap-2 text-white sm:mt-8">
-                  <span className="text-3xl font-semibold sm:text-4xl">{plan.price}</span>
-                  <span className="text-xs text-white/60 sm:text-sm">{plan.cadence}</span>
-                </div>
-                <ul className="mt-6 space-y-2 text-xs text-white/75 sm:mt-8 sm:space-y-3 sm:text-sm">
-                  {plan.highlights.map((highlight) => (
-                    <li
-                      key={highlight}
-                      className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 sm:gap-3 sm:px-4"
-                    >
-                      <Sparkles className="h-3 w-3 flex-shrink-0 text-accent sm:h-4 sm:w-4" />
-                      <span>{highlight}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className="mt-6 w-full sm:mt-8"
-                  variant={plan.featured ? 'primary' : 'secondary'}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    signInWithGoogle();
-                  }}
-                  type="button"
-                >
-                  {plan.featured ? 'Upgrade now' : 'Start free trial'}
-                </Button>
-              </Card>
-            ))}
+          <section className="flex flex-col gap-6 sm:gap-8">
+            <div className="flex flex-col gap-4 text-center sm:gap-6">
+              <Badge variant="translucent" className="self-center text-[10px] sm:text-xs">
+                Flexible Pricing
+              </Badge>
+              <h2 className="font-display text-2xl text-white sm:text-3xl md:text-[40px]">
+                Choose the plan that fits your needs
+              </h2>
+              <p className="max-w-2xl self-center text-sm text-white/70 sm:text-base md:text-lg">
+                Start with 3 free credits, then purchase credit packages as you need them.
+                No subscriptions, no commitments—pay only for what you use.
+              </p>
+            </div>
+            <PricingSection onSignUp={signInWithGoogle} />
           </section>
 
           <section className="relative overflow-hidden rounded-[24px] border border-white/15 bg-white/[0.04] px-6 py-10 text-center backdrop-blur-xl sm:rounded-[32px] sm:px-8 sm:py-12 md:rounded-[36px] md:px-10 md:py-16">
@@ -382,27 +330,27 @@ export default function LandingPage() {
                 Produce campaign-grade imagery without booking a set.
               </h2>
               <p className="max-w-2xl text-sm text-white/75 sm:text-base md:text-lg">
-                Launch Visionary Studio, upload a reference, and watch the system build a
+                Launch AdShotAI, upload a reference, and watch the system build a
                 fully art-directed shoot. It's the modern creative atelier—powered by AI.
               </p>
-              <Button 
-                size="lg" 
+              <MagneticButton
+                size="lg"
                 onClick={(e) => {
                   e.preventDefault();
-                  signIn();
-                }} 
+                  signInWithGoogle();
+                }}
                 className="w-full sm:w-auto"
                 type="button"
               >
                 Enter the studio
-              </Button>
+              </MagneticButton>
             </div>
           </section>
         </main>
 
         <footer className="border-t border-white/10 bg-black/30 py-6 backdrop-blur-xl sm:py-8 md:py-10">
           <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-3 px-4 text-xs text-white/60 sm:gap-4 sm:px-6 sm:text-sm md:flex-row md:items-center md:justify-between md:px-8 lg:px-12 xl:px-16">
-            <span>© {new Date().getFullYear()} Visionary Studio. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} AdShotAI. All rights reserved.</span>
             <div className="flex gap-4 sm:gap-6">
               <a href="#" className="hover:text-white transition">
                 Privacy

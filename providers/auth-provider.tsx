@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { createClient } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { generateDeviceFingerprint, storeFingerprintForAuth } from '../lib/device-fingerprint';
 
 interface AuthContextValue {
   user: User | null;
@@ -49,10 +50,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     try {
+      // Generate fingerprint before OAuth redirect
+      const fingerprint = await generateDeviceFingerprint();
+      
+      // Store in localStorage for retrieval after OAuth redirect
+      storeFingerprintForAuth(fingerprint);
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?fingerprint=${encodeURIComponent(fingerprint)}`,
         },
       });
       if (error) throw error;
@@ -102,8 +109,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = useCallback(async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      // Clear client-side session
+      const { error: clientError } = await supabase.auth.signOut();
+      if (clientError) throw clientError;
+
+      // Clear server-side session cookies
+      const response = await fetch('/api/auth/session', {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to clear server session');
+      }
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
