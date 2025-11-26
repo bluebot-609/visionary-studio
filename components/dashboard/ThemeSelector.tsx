@@ -46,7 +46,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ selectedTheme, onS
         })}
       </div>
       <p className="text-xs text-white/50 mt-2">
-        Themes like 'Editorial' and 'Cinematic' work best with Pro mode.
+        Themes like &ldquo;Editorial&rdquo; and &ldquo;Cinematic&rdquo; work best with Pro mode.
       </p>
     </div>
   );

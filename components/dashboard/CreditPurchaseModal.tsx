@@ -117,9 +117,9 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
       // Otherwise, try IP-based detection
       try {
         const location = await getLocation();
-        
+
         // Check if API suggests using browser detection (for localhost/private IPs)
-        if ((location as any).useBrowserDetection) {
+        if (location.useBrowserDetection) {
           // Use browser-based detection result we already got
           console.log('📍 Location detected (browser fallback):', browserLocation.isIndia ? 'India (INR)' : 'International (USD)');
           setCurrency(browserLocation.currency);

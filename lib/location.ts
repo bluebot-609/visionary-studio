@@ -9,6 +9,8 @@ export interface LocationData {
   country: CountryCode;
   currency: Currency;
   isIndia: boolean;
+  // Optional flag used by the API to suggest falling back to browser detection
+  useBrowserDetection?: boolean;
 }
 
 /**
@@ -60,7 +62,10 @@ export function detectLocationFromBrowser(): LocationData {
     }
 
     // Try locale
-    const locale = navigator.language || (navigator as any).userLanguage || 'en-US';
+    const locale =
+      navigator.language ||
+      (navigator as Navigator & { userLanguage?: string }).userLanguage ||
+      'en-US';
     const localeLower = locale.toLowerCase();
     
     // Check for India locale indicators

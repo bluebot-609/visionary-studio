@@ -288,7 +288,9 @@ export default function LandingPage() {
           <section className="grid gap-6 sm:gap-8 lg:grid-cols-2">
             {testimonials.map((testimonial) => (
               <Card key={testimonial.name} className="bg-white/[0.04] p-6 sm:p-8 md:p-10">
-                <p className="text-sm text-white/90 sm:text-base md:text-lg">"{testimonial.quote}"</p>
+                <p className="text-sm text-white/90 sm:text-base md:text-lg">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </p>
                 <div className="mt-4 flex items-center gap-3 text-xs text-white/60 sm:mt-6 sm:text-sm">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs text-white sm:h-12 sm:w-12 sm:text-sm">
                     {testimonial.name
@@ -331,7 +333,7 @@ export default function LandingPage() {
               </h2>
               <p className="max-w-2xl text-sm text-white/75 sm:text-base md:text-lg">
                 Launch AdShotAI, upload a reference, and watch the system build a
-                fully art-directed shoot. It's the modern creative atelier—powered by AI.
+                fully art-directed shoot. It&apos;s the modern creative atelier—powered by AI.
               </p>
               <MagneticButton
                 size="lg"

@@ -238,12 +238,12 @@ export const InputPanel: React.FC<InputPanelProps> = ({
             id="model-appearance"
             rows={2}
             className="w-full p-3 border border-white/10 rounded-lg shadow-sm focus:ring-2 focus:ring-accent focus:border-accent transition-shadow bg-white/[0.05] text-white placeholder-white/40"
-            placeholder="e.g., 'A young woman with curly hair', 'A professional business man in a suit'"
+            placeholder="e.g., “A young woman with curly hair”, “A professional business man in a suit”"
             value={modelAppearance}
             onChange={(e) => onModelAppearanceChange(e.target.value)}
           />
           <p className="text-xs text-white/50 mt-2">
-            Describe the model's appearance. Leave blank to let AI decide.
+            Describe the model appearance. Leave blank to let AI decide.
           </p>
         </div>
       )}
