@@ -1,49 +1,80 @@
-import { GoogleGenAI, Type, Modality, Part } from "@google/genai";
-import type { UploadedFile, ImageData, CreativeConcept, GeneratedContent } from '../types';
+import { GoogleGenAI, Modality, Part, Type } from "@google/genai";
+import type { ImageData, GeneratedContent, CreativeConcept, ShotType } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-
-// --- Reference Project Functions ---
-
-/**
- * Generate creative concepts for a product image
- * Uses the exact prompt template from the reference project
- */
 export const generateCreativeConcepts = async (
   productImage: ImageData,
   theme?: string,
-  prompt?: string
+  userPrompt?: string,
+  isProMode: boolean = false,
+  autoGenerateText: boolean = false,
+  shotType: ShotType = "product"
 ): Promise<CreativeConcept[]> => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY environment variable not set");
   }
 
-  let conceptPrompt = `You are a professional product photographer and creative director. You have been given an image of a product. Your task is to brainstorm THREE distinct and compelling photoshoot concepts for this product. The concepts should be creative, visually interesting, and suitable for high-quality commercial use.`;
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const model = "gemini-2.5-flash";
+
+  let prompt = `You are a professional product photographer and creative director. You have been given an image of a product. Your task is to brainstorm THREE distinct and compelling photoshoot concepts for this product. The concepts should be creative, visually interesting, and suitable for high-quality commercial use.`;
+
+  if (shotType === "model") {
+    prompt += `\n\nCONSTRAINT: These concepts MUST feature the product on a model (person). Ensure the scene descriptions involve a model interacting with the product.`;
+  } else {
+    prompt += `\n\nCONSTRAINT: These concepts MUST be product hero shots. The product should be the sole focus. Do NOT include models or people in the scene descriptions.`;
+  }
 
   if (theme) {
-    conceptPrompt += `\n\nThe overall theme for these concepts must be: **${theme}**. Ensure all three concepts strongly align with the "${theme}" aesthetic.`;
+    prompt += `\n\nThe overall theme for these concepts must be: **${theme}**. Ensure all three concepts strongly align with the "${theme}" aesthetic.`;
   }
 
-  if (prompt) {
-    conceptPrompt += `\n\nThe user has provided the following creative direction to guide your concept generation: "${prompt}". Use this as inspiration and incorporate these ideas into the three concepts you create.`;
+  if (userPrompt) {
+    prompt += `\n\nAdditionally, the user has provided the following creative direction that you must incorporate into your concepts: "${userPrompt}".`;
   }
 
-  conceptPrompt += `\n\nFor each concept, provide:
+  if (isProMode && autoGenerateText) {
+    prompt += `\n\nSince we are using an advanced generation model and the user requested text, please suggest a "Text Overlay" for each concept. This could be a catchy slogan, the product name, or a sale message that would look good on the image.`;
+  }
+
+  prompt += `
+
+For each concept, provide:
 1.  A short, catchy title.
 2.  A detailed description of the scene, including props, background, and overall aesthetic.
 3.  A description of the lighting (e.g., 'dramatic high-contrast lighting', 'soft, ethereal backlighting').
-4.  A description of the product's arrangement and placement in the scene (e.g., 'centered and heroic', 'part of a larger flat-lay composition').
-5.  A description of the overall mood (e.g., 'mysterious and moody', 'energetic and vibrant').`;
+4.  A description of the product's arrangement and placement in the scene.
+5.  A description of the overall mood.
+${isProMode && autoGenerateText ? "6.  A suggestion for text overlay (content, font style, and placement)." : ""}
+`;
+
+  const schemaProperties: any = {
+    title: { type: Type.STRING },
+    scene_description: { type: Type.STRING },
+    lighting: { type: Type.STRING },
+    product_arrangement: { type: Type.STRING },
+    mood: { type: Type.STRING },
+  };
+
+  if (isProMode && autoGenerateText) {
+    schemaProperties.text_overlay_suggestion = {
+      type: Type.OBJECT,
+      properties: {
+        text_content: { type: Type.STRING },
+        font_style: { type: Type.STRING },
+        placement: { type: Type.STRING },
+      },
+      required: ["text_content", "font_style", "placement"],
+    };
+  }
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
+      model,
       contents: {
         parts: [
           { inlineData: { mimeType: productImage.mimeType, data: productImage.data } },
-          { text: conceptPrompt }
-        ]
+          { text: prompt },
+        ],
       },
       config: {
         responseMimeType: "application/json",
@@ -51,24 +82,21 @@ export const generateCreativeConcepts = async (
           type: Type.ARRAY,
           items: {
             type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              scene_description: { type: Type.STRING },
-              lighting: { type: Type.STRING },
-              product_arrangement: { type: Type.STRING },
-              mood: { type: Type.STRING },
-            },
-            required: ["title", "scene_description", "lighting", "product_arrangement", "mood"]
-          }
-        }
-      }
+            properties: schemaProperties,
+            required: [
+              "title",
+              "scene_description",
+              "lighting",
+              "product_arrangement",
+              "mood",
+              ...(isProMode && autoGenerateText ? ["text_overlay_suggestion"] : []),
+            ],
+          },
+        },
+      },
     });
 
-    const jsonText = response.text?.trim() || '';
-    if (!jsonText) {
-      throw new Error("Empty response from AI");
-    }
-    const concepts = JSON.parse(jsonText);
+    const concepts = JSON.parse(response.text || "");
     if (!concepts || !Array.isArray(concepts) || concepts.length === 0) {
       throw new Error("The AI failed to generate creative concepts. Please try again.");
     }
@@ -79,22 +107,25 @@ export const generateCreativeConcepts = async (
   }
 };
 
-/**
- * Generate photoshoot image from product image with optional reference
- * Uses the exact prompt template from the reference project
- */
 export const generatePhotoshootImage = async (
   productImage: ImageData,
   referenceImage: ImageData | null,
   prompt: string,
   modelAppearance?: string,
-  aspectRatio: '1:1' | '9:16' | '4:3' | '3:4' | '16:9' = '1:1'
+  aspectRatio: string = "1:1",
+  isProMode: boolean = false,
+  resolution: string = "1K",
+  textOverlay?: string,
+  autoGenerateText: boolean = false,
+  shotType: ShotType = "product"
 ): Promise<GeneratedContent> => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY environment variable not set");
   }
 
-  // --- Call 1: Generate Image ---
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const modelName = isProMode ? "gemini-3-pro-image-preview" : "gemini-2.5-flash-image";
+
   const imageGenerationParts: Part[] = [];
 
   imageGenerationParts.push({
@@ -109,96 +140,104 @@ export const generatePhotoshootImage = async (
       inlineData: {
         mimeType: referenceImage.mimeType,
         data: referenceImage.data,
-      }
+      },
     });
   }
 
   let finalPrompt: string;
-  const modelInstruction = `If the product in the first image is an item of clothing, accessory, or other wearable, feature it on a model. Otherwise, stage the product as the central focus of the scene.`;
+  let shotInstruction = "";
+
+  if (shotType === "model") {
+    shotInstruction =
+      "Feature the product on a professional model. The model should interact with the product naturally (wearing it if it is clothing/accessory, holding it otherwise).";
+    if (modelAppearance) {
+      shotInstruction += ` The model should match this description: "${modelAppearance}".`;
+    }
+  } else {
+    shotInstruction =
+      "Create a product hero shot. The product should be the sole focus of the image. Do NOT include any people or models in the scene. The image must focus exclusively on the product.";
+  }
 
   if (referenceImage) {
-    // Reference image flow: use reference image for style guidance
-    finalPrompt = 'You are an expert AI product photographer. Your task is to generate a realistic and professional photoshoot image.';
-    finalPrompt += ' The first image contains the product to be featured. The second image is a reference for style, composition, product placement, lighting, and mood.';
-    finalPrompt += ' Your goal is to recreate the scene from the reference image, but replace its main subject with the product from the first image.';
-    finalPrompt += ' If the reference image contains a person, you MUST NOT copy their face or exact appearance. Instead, generate a new, unique model that fits the overall style and theme.';
+    finalPrompt =
+      "You are an expert AI product photographer. Your task is to generate a realistic and professional photoshoot image.";
+    finalPrompt +=
+      " The first image contains the product to be featured. The second image is a reference for style, composition, product placement, lighting, and mood.";
+    finalPrompt +=
+      " Your goal is to recreate the scene from the reference image, but replace its main subject with the product from the first image.";
+    finalPrompt +=
+      " If the reference image contains a person, but the instruction is for a product hero shot, IGNORE the person and generate a product-only scene.";
 
-    if (modelAppearance) {
-      finalPrompt += ` The new model should match this description: "${modelAppearance}".`;
+    if (shotType === "model") {
+      finalPrompt +=
+        " If the reference image contains a person, you MUST NOT copy their face or exact appearance. Instead, generate a new, unique model that fits the overall style and theme.";
     }
 
-    // This instruction is still useful to tell the AI when to use a model,
-    // especially if the product is wearable but the reference is an abstract scene.
-    finalPrompt += ` ${modelInstruction}`;
+    finalPrompt += ` ${shotInstruction}`;
 
     if (prompt) {
       finalPrompt += ` Follow this additional creative direction: "${prompt}".`;
     }
   } else {
-    // No reference image: use the detailed concept prompt
-    finalPrompt = 'You are an expert AI product photographer. Your task is to generate a realistic and professional photoshoot image.';
-    finalPrompt += ` The subject of the photoshoot is the product from the image provided. ${modelInstruction}`;
+    finalPrompt =
+      "You are an expert AI product photographer. Your task is to generate a realistic and professional photoshoot image.";
+    finalPrompt += ` The subject of the photoshoot is the product from the image provided. ${shotInstruction}`;
     finalPrompt += ` The creative direction for the scene, lighting, arrangement, and mood is as follows: "${prompt}".`;
   }
 
-  finalPrompt += ` Please generate the final image now.`;
-  imageGenerationParts.push({ text: finalPrompt });
+  if (isProMode) {
+    if (textOverlay && textOverlay.trim().length > 0) {
+      finalPrompt += ` \n\nIMPORTANT: Add a text overlay to the image. The text MUST read: "${textOverlay}". Ensure the font style, color, and placement are professional, legible, and aesthetically consistent with the scene's mood.`;
+    } else if (autoGenerateText) {
+      finalPrompt +=
+        " \n\nIMPORTANT: Create a creative and catchy text overlay suitable for an advertisement of this product. Choose a font and placement that enhances the composition.";
+    } else {
+      finalPrompt += " \n\nEnsure there is NO text overlay on the image.";
+    }
+  }
 
-  let generatedImageData: string;
+  finalPrompt += " Please generate the final image now.";
+
+  imageGenerationParts.push({ text: finalPrompt });
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: modelName,
       contents: { parts: imageGenerationParts },
       config: {
         responseModalities: [Modality.IMAGE],
         imageConfig: {
-          aspectRatio: aspectRatio,
-        },
+          aspectRatio,
+          // imageSize is only supported by gemini-3-pro-image-preview
+          imageSize: isProMode ? resolution : undefined,
+        } as any,
       },
     });
 
     if (response.promptFeedback?.blockReason) {
-      let reason = `Request was blocked. Reason: ${response.promptFeedback.blockReason}.`;
+      let reason = `Request to ${modelName} was blocked. Reason: ${response.promptFeedback.blockReason}.`;
       if (response.promptFeedback.safetyRatings) {
         reason += ` Safety ratings: ${JSON.stringify(response.promptFeedback.safetyRatings)}`;
       }
       throw new Error(reason);
     }
 
-    const imagePart = response.candidates?.[0]?.content?.parts?.find(part => part.inlineData);
+    const imagePart = response.candidates?.[0]?.content?.parts?.find((part) => part.inlineData);
+    const imageUrl = imagePart?.inlineData ? `data:image/png;base64,${imagePart.inlineData.data}` : null;
 
-    if (imagePart?.inlineData?.data) {
-      generatedImageData = imagePart.inlineData.data;
-    } else {
-      console.error("Full API response for image generation:", JSON.stringify(response, null, 2));
-
-      const finishReason = response.candidates?.[0]?.finishReason;
-      let errorMessage = "Image generation failed. The model did not return an image.";
-
-      if (finishReason === "OTHER") {
-        errorMessage += " This can happen if the request is out of the model's capabilities or the prompt is ambiguous. Try rephrasing your description or using different images.";
-      } else if (finishReason === "SAFETY") {
-        errorMessage += " The request was blocked by safety filters. Please adjust your prompt or images.";
-      } else if (finishReason) {
-        errorMessage += ` Reason: ${finishReason}.`;
-      }
-
-      const textPart = response.candidates?.[0]?.content?.parts?.find(p => p.text);
-      if (textPart?.text) {
-        errorMessage += ` The model responded with text: "${textPart.text}"`;
-      }
-
-      throw new Error(errorMessage);
+    if (!imageUrl) {
+      const textPart = response.candidates?.[0]?.content?.parts?.find((p) => p.text);
+      throw new Error(`Generation failed. ${textPart ? textPart.text : "No image returned."}`);
     }
-  } catch (error: any) {
-    console.error("Error calling Gemini API for image generation:", error);
-    throw new Error(`Failed to generate image. ${error.message}`);
-  }
 
-  // Return image without description (removed as per requirements)
-  return {
-    image: generatedImageData,
-    description: '', // No description needed
-  };
+    return {
+      imageUrl,
+      usedModel: isProMode ? "Nano Banana Pro" : "Nano Banana",
+    };
+  } catch (error: any) {
+    console.error(`${modelName} generation failed:`, error);
+    throw error;
+  }
 };
+
+

@@ -47,15 +47,15 @@ export interface GeneratedCaptions {
 }
 
 export interface SeductiveCaptions extends GeneratedCaptions {
-    seductiveHinglish: string;
-    seductiveHindi: string;
-    seductiveEnglish: string;
+  seductiveHinglish: string;
+  seductiveHindi: string;
+  seductiveEnglish: string;
 }
 
 // FIX: Added Concept interface to be used across the application.
 export interface Concept {
-    title: string;
-    description: string;
+  title: string;
+  description: string;
 }
 
 // --- Professional Photography Settings ---
@@ -264,15 +264,24 @@ export interface ImageData {
   data: string; // base64
 }
 
+// --- Reference Gemini Types (Nano Banana) ---
+
+export type ShotType = 'product' | 'model';
+
 export interface CreativeConcept {
   title: string;
   scene_description: string;
   lighting: string;
-  product_arrangement: string;
   mood: string;
+  product_arrangement: string;
+  text_overlay_suggestion?: {
+    text_content: string;
+    font_style: string;
+    placement: string;
+  };
 }
 
 export interface GeneratedContent {
-  image: string; // base64
-  description: string;
+  imageUrl: string | null;
+  usedModel: string;
 }
