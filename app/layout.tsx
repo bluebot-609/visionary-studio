@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Sora } from 'next/font/google';
 import { AuthProvider } from '../providers/auth-provider';
+import { CreditsProvider } from '../providers/credits-provider';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import './globals.css';
 
@@ -16,15 +17,18 @@ const sora = Sora({
   display: 'swap',
 });
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
 export const metadata: Metadata = {
-  title: 'Visionary Studio — AI-Powered Creative Suite',
+  metadataBase: new URL(appUrl),
+  title: 'AdShotAI — AI-Powered Product Photography',
   description:
-    'Design premium product imagery with AI direction, professional styling, and instant iteration.',
+    'Create stunning product photos with AI. Professional ad-ready imagery in seconds.',
   openGraph: {
     type: 'website',
-    title: 'Visionary Studio',
+    title: 'AdShotAI',
     description:
-      'Design premium product imagery with AI direction, professional styling, and instant iteration.',
+      'Create stunning product photos with AI. Professional ad-ready imagery in seconds.',
     images: ['/og-image.png'],
   },
 };
@@ -38,7 +42,9 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${sora.variable}`}>
       <body>
         <ErrorBoundary>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <CreditsProvider>{children}</CreditsProvider>
+          </AuthProvider>
         </ErrorBoundary>
       </body>
     </html>
