@@ -89,6 +89,22 @@ export const useRazorpayCheckout = () => {
           theme: {
             color: '#ff8d7a',
           },
+          handler: async (response: any) => {
+            // Payment successful - send message to window for modal to handle
+            window.postMessage({
+              type: 'RAZORPAY_PAYMENT_SUCCESS',
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              packageId: payload.planId,
+            }, window.location.origin);
+          },
+          modal: {
+            ondismiss: () => {
+              // Payment cancelled
+              setLoading(false);
+            },
+          },
         });
 
         razorpay.open();
