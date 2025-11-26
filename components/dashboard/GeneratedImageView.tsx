@@ -15,18 +15,15 @@ interface GeneratedImageViewProps {
 export const GeneratedImageView: React.FC<GeneratedImageViewProps> = ({
   content,
   isLoading,
-  onBackToConcepts,
   onSaveToLibrary,
-  onStartNewProject,
-  showBackButton = false,
 }) => {
   const [showFullSize, setShowFullSize] = React.useState(false);
+  const [showControls, setShowControls] = React.useState(false);
 
   const handleDownload = () => {
-    if (!content) return;
+    if (!content?.imageUrl) return;
     const link = document.createElement('a');
-    const imageSrc = content.image.startsWith('data:') ? content.image : `data:image/png;base64,${content.image}`;
-    link.href = imageSrc;
+    link.href = content.imageUrl;
     link.download = 'ai-photoshoot.png';
     document.body.appendChild(link);
     link.click();
@@ -40,7 +37,7 @@ export const GeneratedImageView: React.FC<GeneratedImageViewProps> = ({
   return (
     <div className="w-full h-full flex flex-col bg-white/[0.03] rounded-lg p-4">
       <h2 className="font-display text-2xl font-bold text-white mb-4 flex-shrink-0">Generated Output</h2>
-      <div className="flex-grow w-full flex flex-col justify-center items-center min-h-0">
+      <div className="flex-grow w-full flex items-center justify-center min-h-0">
         {isLoading ? (
           <div className="text-center text-white/70">
             <div className="animate-pulse flex flex-col items-center">
@@ -51,75 +48,54 @@ export const GeneratedImageView: React.FC<GeneratedImageViewProps> = ({
             <p className="mt-4 font-semibold text-sm text-white/90">AI is working its magic...</p>
             <p className="text-sm font-normal text-white/60">Generating your photoshoot image...</p>
           </div>
-        ) : content ? (
-          <div className="w-full h-full flex flex-col gap-4 overflow-hidden">
-            <div className="relative w-full bg-black/20 rounded-lg overflow-hidden flex items-center justify-center" style={{ maxHeight: 'calc(100vh - 300px)', minHeight: '400px' }}>
-              <img
-                src={content.image.startsWith('data:') ? content.image : `data:image/png;base64,${content.image}`}
-                alt="Generated photoshoot"
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {showBackButton && onBackToConcepts && (
+        ) : content && content.imageUrl ? (
+          <div 
+            className="relative group cursor-pointer"
+            onMouseEnter={() => setShowControls(true)}
+            onMouseLeave={() => setShowControls(false)}
+            onClick={() => setShowControls(!showControls)}
+          >
+            <img
+              src={content.imageUrl}
+              alt="Generated photoshoot"
+              className="max-w-full max-h-[1000px] object-contain rounded-lg"
+            />
+            {/* Overlay with buttons on hover/click */}
+            <div 
+              className={`absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center gap-3 transition-opacity duration-200 ${
+                showControls ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
               <button
-                onClick={onBackToConcepts}
-                className="px-4 py-2 bg-white/[0.1] text-white/90 rounded-lg border border-white/10 hover:bg-white/[0.15] hover:border-white/20 transition-colors duration-200 text-sm font-semibold"
-              >
-                Back to Concepts
-              </button>
-              )}
-              <button
-                onClick={handleViewFullSize}
-                className="px-4 py-2 bg-white/[0.1] text-white/90 rounded-lg border border-white/10 hover:bg-white/[0.15] hover:border-white/20 transition-colors duration-200 text-sm font-semibold"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewFullSize();
+                }}
+                className="px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 hover:bg-white/30 transition-colors duration-200 text-sm font-semibold backdrop-blur-sm"
               >
                 View Full Size
               </button>
               <button
-                onClick={handleDownload}
-                className="px-4 py-2 bg-white/[0.1] text-white/90 rounded-lg border border-white/10 hover:bg-white/[0.15] hover:border-white/20 transition-colors duration-200 text-sm font-semibold"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload();
+                }}
+                className="px-4 py-2 bg-white/20 text-white rounded-lg border border-white/30 hover:bg-white/30 transition-colors duration-200 text-sm font-semibold backdrop-blur-sm"
               >
                 Download
               </button>
               {onSaveToLibrary && (
                 <button
-                  onClick={onSaveToLibrary}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSaveToLibrary();
+                  }}
                   className="px-4 py-2 bg-accent text-slate-950 rounded-lg hover:bg-accent-hover transition-colors duration-200 text-sm font-semibold"
                 >
                   Save to Library
                 </button>
               )}
-              {onStartNewProject && (
-                <button
-                  onClick={onStartNewProject}
-                  className="px-4 py-2 bg-white/[0.1] text-white/90 rounded-lg border border-white/10 hover:bg-white/[0.15] hover:border-white/20 transition-colors duration-200 text-sm font-semibold"
-                >
-                  Start New Project
-                </button>
-              )}
             </div>
-            {showFullSize && (
-              <div
-                className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-                onClick={() => setShowFullSize(false)}
-              >
-                <button
-                  onClick={() => setShowFullSize(false)}
-                  className="absolute top-4 right-4 bg-white/20 text-white rounded-full p-2 hover:bg-white/30 transition-colors"
-                  aria-label="Close"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-                <img
-                  src={content.image.startsWith('data:') ? content.image : `data:image/png;base64,${content.image}`}
-                  alt="Generated photoshoot - full size"
-                  className="max-w-full max-h-full object-contain"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            )}
           </div>
         ) : (
           <div className="text-center text-white/50">
@@ -131,7 +107,30 @@ export const GeneratedImageView: React.FC<GeneratedImageViewProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Full Size Modal */}
+      {showFullSize && content?.imageUrl && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setShowFullSize(false)}
+        >
+          <button
+            onClick={() => setShowFullSize(false)}
+            className="absolute top-4 right-4 bg-white/20 text-white rounded-full p-2 hover:bg-white/30 transition-colors"
+            aria-label="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img
+            src={content.imageUrl}
+            alt="Generated photoshoot - full size"
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };
-
