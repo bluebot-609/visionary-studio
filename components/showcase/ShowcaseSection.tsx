@@ -6,6 +6,10 @@ import { BeforeAfterSlider } from './BeforeAfterSlider';
 import { Badge } from '../ui/badge';
 
 // Before/After comparison data
+// To add new pairs: 
+// 1. Upload before image to public/showcase/ (e.g., before-3.jpeg)
+// 2. Upload after image to public/showcase/ (e.g., after-3.png)
+// 3. Add a new object to this array with the file paths
 const comparisons = [
   {
     id: 1,
@@ -21,16 +25,54 @@ const comparisons = [
     beforeLabel: 'Product',
     afterLabel: 'Ad Ready',
   },
+  // Add more pairs here:
+  // {
+  //   id: 3,
+  //   before: '/showcase/before-3.jpeg',
+  //   after: '/showcase/after-3.png',
+  //   beforeLabel: 'Product',
+  //   afterLabel: 'Ad Ready',
+  // },
 ];
 
-// Gallery images
+// Gallery images with original source photos for reverse reveal
 const galleryImages = [
-  { id: 1, src: '/showcase/gallery-4.png', alt: 'Editorial style' },
-  { id: 2, src: '/showcase/gallery-1.png', alt: 'Fashion photoshoot' },
-  { id: 3, src: '/showcase/gallery-2.png', alt: 'Product photography' },
-  { id: 4, src: '/showcase/gallery-3.png', alt: 'Lifestyle shot' },
-  { id: 5, src: '/showcase/gallery-5.png', alt: 'Campaign visual' },
-  { id: 6, src: '/showcase/gallery-6.jpg', alt: 'Cosmetics shot' },
+  { 
+    id: 1, 
+    src: '/showcase/gallery-4.png', 
+    originalSrc: '/showcase/gallery-src-4.webp',
+    alt: 'Editorial style' 
+  },
+  { 
+    id: 2, 
+    src: '/showcase/gallery-1.png', 
+    originalSrc: '/showcase/gallery-src-1.webp',
+    alt: 'Fashion photoshoot' 
+  },
+  { 
+    id: 3, 
+    src: '/showcase/gallery-2.png', 
+    originalSrc: '/showcase/gallery-src-2.jpg',
+    alt: 'Product photography' 
+  },
+  { 
+    id: 4, 
+    src: '/showcase/gallery-3.png', 
+    originalSrc: '/showcase/gallery-src-3.jpeg',
+    alt: 'Lifestyle shot' 
+  },
+  { 
+    id: 5, 
+    src: '/showcase/gallery-5.png', 
+    originalSrc: '/showcase/gallery-src-5.jpg',
+    alt: 'Campaign visual' 
+  },
+  { 
+    id: 6, 
+    src: '/showcase/gallery-6.jpg', 
+    originalSrc: '/showcase/gallery-src-6.jpg',
+    alt: 'Cosmetics shot' 
+  },
 ];
 
 export const ShowcaseSection: React.FC = () => {
@@ -93,22 +135,43 @@ export const ShowcaseSection: React.FC = () => {
             {galleryImages.map((image, index) => (
               <motion.div
                 key={image.id}
-                className="group relative aspect-square overflow-hidden rounded-xl sm:rounded-2xl border border-white/10 bg-black/20"
+                className="group relative aspect-square overflow-visible rounded-xl sm:rounded-2xl border border-white/10 bg-black/20"
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: 0.1 * index }}
               >
-                <img
-                  src={image.src}
-                  alt={image.alt}
-                  className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
-                />
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <p className="text-xs sm:text-sm font-medium text-white">{image.alt}</p>
+                {/* Main generated ad image */}
+                <div className="relative w-full h-full overflow-hidden rounded-xl sm:rounded-2xl">
+                  <img
+                    src={image.src}
+                    alt={image.alt}
+                    className="w-full h-full object-contain transition-transform duration-300 ease-out group-hover:scale-[1.05]"
+                  />
                 </div>
+
+                {/* Polaroid popup with original photo - appears on group hover */}
+                {image.originalSrc && (
+                  <div className="absolute bottom-2 right-2 z-20 pointer-events-none opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out">
+                    <div className="relative bg-white rounded-lg shadow-2xl p-2 w-24 h-28 sm:w-28 sm:h-32 md:w-32 md:h-36 transform rotate-[-3deg] group-hover:rotate-[-2deg] transition-transform duration-300">
+                      {/* Polaroid white border effect */}
+                      <div className="absolute inset-0 bg-white rounded-lg" />
+                      <div className="relative w-full h-full rounded-md overflow-hidden">
+                        <img
+                          src={image.originalSrc}
+                          alt="Original photo"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      {/* Polaroid bottom label area */}
+                      <div className="absolute bottom-0 left-0 right-0 h-6 bg-white rounded-b-lg flex items-center justify-center">
+                        <div className="w-12 h-0.5 bg-gray-300 rounded-full" />
+                      </div>
+                      {/* Subtle shadow for depth */}
+                      <div className="absolute inset-0 rounded-lg shadow-[0_8px_24px_rgba(0,0,0,0.4)] pointer-events-none" />
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>

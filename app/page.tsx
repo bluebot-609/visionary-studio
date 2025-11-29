@@ -26,26 +26,6 @@ const heroVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-const features = [
-  {
-    title: 'Creative Direction AI',
-    description:
-      'Art-directs your shoot with luxury campaign sensibility and cinematic composition.',
-    icon: Sparkles,
-  },
-  {
-    title: 'One-click Stylized Sets',
-    description:
-      'Generate environments, backdrops, and lighting blueprints that look production-ready.',
-    icon: Camera,
-  },
-  {
-    title: 'Reference-to-Render',
-    description:
-      'Drop a single reference shot and evolve it into a full editorial storyline.',
-    icon: UploadCloud,
-  },
-];
 
 const testimonials = [
   {
@@ -82,30 +62,29 @@ export default function LandingPage() {
       <BackgroundBlobs />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.08),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(124,208,255,0.12),_transparent_60%)]" />
       <div className="relative z-10">
-        <header className="sticky top-6 z-50 mx-auto flex w-[95%] max-w-5xl flex-col items-start gap-4 rounded-full border border-white/10 bg-black/60 px-6 py-4 backdrop-blur-xl transition-all duration-300 sm:w-fit sm:flex-row sm:items-center sm:justify-between sm:gap-12 shadow-2xl shadow-black/20">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-lg font-bold text-white sm:h-12 sm:w-12 sm:text-2xl">
+        <header className="sticky top-2 z-50 mx-auto flex w-[95%] max-w-5xl items-center justify-between gap-2 rounded-full border border-white/10 bg-black/60 px-2.5 py-1.5 backdrop-blur-xl transition-all duration-300 sm:top-6 sm:w-fit sm:gap-12 sm:px-6 sm:py-4 shadow-2xl shadow-black/20">
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white sm:h-12 sm:w-12 sm:text-2xl">
               AS
             </div>
             <div className="flex flex-col">
-              <span className="font-display text-base leading-tight text-white sm:text-lg">
+              <span className="font-display text-xs leading-tight text-white sm:text-lg">
                 AdShotAI
               </span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-white/50 sm:text-xs sm:tracking-[0.25em]">
+              <span className="hidden text-[9px] uppercase tracking-[0.15em] text-white/50 sm:block sm:text-xs sm:tracking-[0.25em]">
                 AI Product Photography
               </span>
             </div>
           </div>
-          <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             <Button
               variant="ghost"
-              size="sm"
               onClick={(e) => {
                 e.preventDefault();
                 signInWithGoogle();
               }}
               disabled={loading}
-              className="flex-1 sm:flex-none"
+              className="h-7 px-2 text-[10px] font-semibold sm:h-9 sm:px-4 sm:text-xs"
               type="button"
             >
               {loading ? 'Launching…' : 'Sign in'}
@@ -116,10 +95,10 @@ export default function LandingPage() {
                 signInWithGoogle();
               }}
               disabled={loading}
-              className="flex-1 sm:flex-none"
+              className="h-7 px-2.5 text-[10px] font-semibold sm:h-11 sm:px-6 sm:text-sm"
               type="button"
             >
-              Start free trial
+              {loading ? 'Launching…' : 'Start free trial'}
             </Button>
           </div>
         </header>
@@ -182,25 +161,50 @@ export default function LandingPage() {
                 </div>
               </motion.div>
             </motion.div>
-            <motion.div
-              className="mt-8 grid gap-4 sm:mt-10 sm:gap-5 md:mt-14 md:grid-cols-3 md:gap-6"
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-            >
-              {features.map((feature) => (
-                <GlowCard key={feature.title} className="bg-white/[0.03] p-5 sm:p-6">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white sm:h-12 sm:w-12">
-                    <feature.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-                  <h3 className="mt-4 font-display text-lg text-white sm:mt-6 sm:text-xl">{feature.title}</h3>
-                  <p className="mt-2 text-xs text-white/70 sm:mt-3 sm:text-sm">{feature.description}</p>
-                </GlowCard>
-              ))}
-            </motion.div>
           </section>
 
-          <section className="grid gap-6 sm:gap-8 lg:grid-cols-[1.2fr,0.8fr]">
+          {/* Showcase Section */}
+          <ShowcaseSection />
+
+          <section className="grid gap-6 sm:gap-8 lg:grid-cols-[0.8fr,1.2fr]">
+            <div className="flex flex-col gap-4 rounded-[24px] border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.02] to-transparent p-6 backdrop-blur-xl sm:gap-6 sm:rounded-[32px] sm:p-8 md:rounded-[36px] md:p-10">
+              <Badge variant="accent" className="self-start text-[10px] tracking-[0.3em] sm:text-xs sm:tracking-[0.4em]">
+                Key Features
+              </Badge>
+              <h3 className="font-display text-xl leading-tight text-white sm:text-2xl md:text-3xl">
+                Everything you need for professional product photography.
+              </h3>
+              <p className="text-xs text-white/70 sm:text-sm">
+                Generate professional images with AI-powered creative concepts, reference-based rendering, and flexible aspect ratios—all in one place.
+              </p>
+              <div className="grid gap-2 sm:gap-3">
+                {[
+                  'AI-generated creative concepts',
+                  'Reference image-based rendering',
+                  'Multiple aspect ratio options',
+                  'Save images to your library',
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs text-white sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
+                  >
+                    <Sparkles className="h-3 w-3 flex-shrink-0 text-accent sm:h-4 sm:w-4" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+              <Button
+                variant="secondary"
+                className="mt-4 w-full self-start sm:mt-6 sm:w-auto"
+                onClick={(e) => {
+                  e.preventDefault();
+                  signInWithGoogle();
+                }}
+                type="button"
+              >
+                Start Creating
+              </Button>
+            </div>
             <div className="flex flex-col gap-4 rounded-[24px] border border-white/10 bg-white/[0.03] px-6 py-8 backdrop-blur-2xl sm:gap-6 sm:rounded-[32px] sm:px-8 sm:py-10 md:rounded-[36px] md:px-10 md:py-12">
               <Badge variant="translucent" className="text-[10px] sm:text-xs">How it works</Badge>
               <h2 className="font-display text-2xl text-white sm:text-3xl md:text-[40px]">
@@ -242,48 +246,7 @@ export default function LandingPage() {
                 ))}
               </div>
             </div>
-            <div className="flex flex-col gap-4 rounded-[24px] border border-white/10 bg-gradient-to-br from-white/[0.08] via-white/[0.02] to-transparent p-6 backdrop-blur-xl sm:gap-6 sm:rounded-[32px] sm:p-8 md:rounded-[36px] md:p-10">
-              <Badge variant="accent" className="self-start text-[10px] tracking-[0.3em] sm:text-xs sm:tracking-[0.4em]">
-                Key Features
-              </Badge>
-              <h3 className="font-display text-xl leading-tight text-white sm:text-2xl md:text-3xl">
-                Everything you need for professional product photography.
-              </h3>
-              <p className="text-xs text-white/70 sm:text-sm">
-                Generate professional images with AI-powered creative concepts, reference-based rendering, and flexible aspect ratios—all in one place.
-              </p>
-              <div className="grid gap-2 sm:gap-3">
-                {[
-                  'AI-generated creative concepts',
-                  'Reference image-based rendering',
-                  'Multiple aspect ratio options',
-                  'Save images to your library',
-                ].map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2 text-xs text-white sm:gap-3 sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
-                  >
-                    <Sparkles className="h-3 w-3 flex-shrink-0 text-accent sm:h-4 sm:w-4" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-              <Button
-                variant="secondary"
-                className="mt-4 w-full self-start sm:mt-6 sm:w-auto"
-                onClick={(e) => {
-                  e.preventDefault();
-                  signInWithGoogle();
-                }}
-                type="button"
-              >
-                Start Creating
-              </Button>
-            </div>
           </section>
-
-          {/* Showcase Section */}
-          <ShowcaseSection />
 
           <section className="grid gap-6 sm:gap-8 lg:grid-cols-2">
             {testimonials.map((testimonial) => (
@@ -353,15 +316,24 @@ export default function LandingPage() {
         <footer className="border-t border-white/10 bg-black/30 py-6 backdrop-blur-xl sm:py-8 md:py-10">
           <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-3 px-4 text-xs text-white/60 sm:gap-4 sm:px-6 sm:text-sm md:flex-row md:items-center md:justify-between md:px-8 lg:px-12 xl:px-16">
             <span>© {new Date().getFullYear()} AdShotAI. All rights reserved.</span>
-            <div className="flex gap-4 sm:gap-6">
-              <a href="#" className="hover:text-white transition">
+            <div className="flex flex-wrap gap-4 sm:gap-6">
+              <a href="/about" className="hover:text-white transition">
+                About
+              </a>
+              <a href="/contact" className="hover:text-white transition">
+                Contact
+              </a>
+              <a href="/privacy" className="hover:text-white transition">
                 Privacy
               </a>
-              <a href="#" className="hover:text-white transition">
+              <a href="/terms" className="hover:text-white transition">
                 Terms
               </a>
-              <a href="#" className="hover:text-white transition">
-                Support
+              <a href="/shipping" className="hover:text-white transition">
+                Shipping
+              </a>
+              <a href="/refund" className="hover:text-white transition">
+                Refund
               </a>
             </div>
           </div>
