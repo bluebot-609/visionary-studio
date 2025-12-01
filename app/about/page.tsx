@@ -44,71 +44,72 @@ export default function AboutPage() {
 
             <div className="prose prose-invert max-w-none space-y-6 text-sm text-white/80 sm:space-y-8 sm:text-base">
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Our Company</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Who We Are</h2>
                 <p>
-                  <strong className="text-white">Registered Business Name:</strong> [YOUR_BUSINESS_NAME]
-                </p>
-                <p className="mt-2">
-                  <strong className="text-white">Registration Number:</strong> [YOUR_REGISTRATION_NUMBER]
-                </p>
-                <p className="mt-2">
-                  <strong className="text-white">Registered Address:</strong> [YOUR_REGISTERED_ADDRESS]
+                  AdShotAI is an independent AI product photography platform built and operated by Shivank Sharma, a solo developer currently based in Bengaluru, India. The project is not a registered business entity; it is personally operated with a focus on quality, transparency, and accessibility.
                 </p>
               </section>
 
               <section>
                 <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Our Mission</h2>
                 <p>
-                  AdShotAI was founded with a vision to democratize professional product photography. 
-                  We believe that every business, regardless of size, should have access to high-quality, 
-                  campaign-ready imagery that elevates their brand.
+                  AdShotAI was created to make high-quality, professional-grade product visuals accessible to every brand, business, and creator—without the cost or complexity of physical photoshoots.
                 </p>
                 <p className="mt-4">
-                  Through cutting-edge AI technology, we transform the traditional photography workflow, 
-                  enabling creators to produce luxury-grade visuals in minutes rather than days.
+                  Through advanced AI image generation, creative styling algorithms, and cinematic lighting models, AdShotAI helps users create stunning product imagery in minutes.
                 </p>
               </section>
 
               <section>
                 <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">What We Do</h2>
                 <p>
-                  AdShotAI is an AI-powered product photography platform that generates professional, 
-                  stylized product images using artificial intelligence. Our service combines:
+                  AdShotAI provides:
                 </p>
                 <ul className="list-disc pl-6 space-y-2 mt-2">
-                  <li>Advanced AI image generation technology</li>
-                  <li>Creative direction and styling algorithms</li>
-                  <li>Cinematic lighting and composition</li>
-                  <li>Reference-based rendering capabilities</li>
+                  <li>Professional AI-generated product photography</li>
+                  <li>Creative direction and styling presets</li>
+                  <li>Realistic lighting and composition algorithms</li>
+                  <li>Reference-based product rendering</li>
+                  <li>Fast, credit-based generation workflow</li>
+                  <li>Simple, user-friendly interface</li>
                 </ul>
+                <p className="mt-4">
+                  Whether you&apos;re designing ads, running an e-commerce store, or launching a new product, AdShotAI helps you produce premium visuals instantly.
+                </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Our History</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Our Story</h2>
                 <p>
-                  [YOUR_BUSINESS_HISTORY] - Describe when and how your business was founded, key milestones, 
-                  and growth trajectory. Include information about your team, investors, or notable achievements.
+                  AdShotAI began as a personal side project combining a passion for AI, automation, and digital design. Seeing small creators struggle with expensive and time-consuming product photoshoots inspired the creation of a fast, accessible, AI-powered alternative.
+                </p>
+                <p className="mt-4">
+                  The platform continues to evolve through experimentation, user feedback, and constant improvements.
                 </p>
               </section>
 
               <section>
                 <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Our Values</h2>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li><strong className="text-white">Innovation:</strong> Pushing the boundaries of AI-powered creative tools</li>
-                  <li><strong className="text-white">Quality:</strong> Delivering professional-grade results that meet industry standards</li>
-                  <li><strong className="text-white">Accessibility:</strong> Making professional photography accessible to all</li>
+                  <li><strong className="text-white">Innovation:</strong> Pushing boundaries in AI-generated creative tools</li>
+                  <li><strong className="text-white">Quality:</strong> Delivering studio-grade results</li>
+                  <li><strong className="text-white">Accessibility:</strong> Making great design affordable for all</li>
                   <li><strong className="text-white">Transparency:</strong> Clear pricing, policies, and communication</li>
                 </ul>
               </section>
 
               <section>
                 <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Contact Information</h2>
-                <p>For business inquiries or support, please visit our <a href="/contact" className="text-accent hover:underline">Contact Us</a> page.</p>
+                <p>
+                  For enquiries or support, reach out anytime:
+                </p>
                 <ul className="list-none pl-0 space-y-1 mt-2">
-                  <li><strong className="text-white">Email:</strong> [YOUR_EMAIL]</li>
-                  <li><strong className="text-white">Operating Address:</strong> [YOUR_OPERATING_ADDRESS]</li>
-                  <li><strong className="text-white">Phone:</strong> [YOUR_PHONE_NUMBER]</li>
+                  <li><strong className="text-white">Email:</strong> shivanksharma.ai@gmail.com</li>
+                  <li><strong className="text-white">Location:</strong> Bengaluru, India</li>
                 </ul>
+                <p className="mt-2 text-sm text-white/60">
+                  (AdShotAI is independently operated; no registered business address is publicly listed.)
+                </p>
               </section>
             </div>
           </Card>

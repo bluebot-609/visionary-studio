@@ -42,116 +42,64 @@ export default function ShippingPolicyPage() {
               Shipping & Delivery Policy
             </h1>
             <p className="text-sm text-white/60 mb-8 sm:text-base">
-              Last updated: [DATE]
+              Last updated: 2025-12-02
             </p>
 
             <div className="prose prose-invert max-w-none space-y-6 text-sm text-white/80 sm:space-y-8 sm:text-base">
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">1. Digital Product Delivery</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Digital Delivery</h2>
                 <p>
-                  AdShotAI is a digital service that provides AI-generated product images. We do not ship physical products. 
-                  All deliverables are digital files delivered instantly through our platform.
+                  AdShotAI is a digital service that provides AI-generated product images. We do not ship physical products. All deliverables are digital files delivered instantly through our platform.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">2. Delivery Method</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Delivery Method</h2>
                 <p>
-                  Generated images are delivered immediately upon completion through:
-                </p>
-                <ul className="list-disc pl-6 space-y-2 mt-2">
-                  <li>Direct download from your dashboard</li>
-                  <li>Access to your image library within the platform</li>
-                  <li>Email notification (if enabled) with download links</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">3. Delivery Timeline</h2>
-                <h3 className="font-semibold text-white mb-2 mt-4">3.1 Image Generation</h3>
-                <p>
-                  AI-generated images are typically delivered within [X] seconds to [X] minutes after you initiate generation, 
-                  depending on server load and image complexity.
-                </p>
-
-                <h3 className="font-semibold text-white mb-2 mt-4">3.2 Processing Time</h3>
-                <p>
-                  In rare cases of high demand, processing may take up to [X] minutes. You will be notified of any delays 
-                  through the platform interface.
+                  Generated images are delivered immediately upon completion through direct download from your dashboard and access to your image library within the platform.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">4. Delivery Costs</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Delivery Timeline</h2>
                 <p>
-                  There are no shipping costs associated with digital delivery. All images are delivered free of charge 
-                  through our platform. You only pay for credits used to generate images.
+                  AI-generated images are typically delivered within seconds to minutes after you initiate generation, depending on server load and image complexity.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">5. International Delivery</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Delivery Costs</h2>
                 <p>
-                  Our digital service is available worldwide. There are no geographical restrictions or additional fees 
-                  for international users. All images are delivered instantly regardless of your location.
+                  There are no shipping costs associated with digital delivery. All images are delivered free of charge through our platform. You only pay for credits used to generate images.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">6. File Formats and Quality</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">International Delivery</h2>
                 <p>
-                  Images are delivered in the following formats:
-                </p>
-                <ul className="list-disc pl-6 space-y-2 mt-2">
-                  <li>High-resolution PNG or JPEG format</li>
-                  <li>Resolution: [SPECIFY_RESOLUTION] (e.g., up to 2048x2048 pixels)</li>
-                  <li>Color profile: sRGB</li>
-                </ul>
-                <p className="mt-2">
-                  You can download images in your preferred format and resolution from your dashboard.
+                  Our digital service is available worldwide. There are no geographical restrictions or additional fees for international users. All images are delivered instantly regardless of your location.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">7. Access and Storage</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">File Formats</h2>
                 <p>
-                  Generated images are stored in your account library for [X] days/months. You are responsible for downloading 
-                  and backing up your images. We recommend downloading important images promptly.
+                  Images are delivered in high-resolution PNG or JPEG format. You can download images in your preferred format and resolution from your dashboard.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">8. Delivery Issues</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Access and Storage</h2>
                 <p>
-                  If you experience any issues accessing or downloading your generated images:
-                </p>
-                <ul className="list-disc pl-6 space-y-2 mt-2">
-                  <li>Check your internet connection</li>
-                  <li>Try refreshing your dashboard</li>
-                  <li>Contact our support team at [YOUR_EMAIL]</li>
-                </ul>
-                <p className="mt-2">
-                  We will assist you in resolving any delivery issues within [X] business hours.
+                  Generated images are stored in your account library. You are responsible for downloading and backing up your images. We recommend downloading important images promptly.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">9. Courier Services</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Delivery Issues</h2>
                 <p>
-                  <strong className="text-white">Not Applicable:</strong> As we provide digital services only, 
-                  we do not use any courier or shipping services. All products are delivered digitally through our platform.
+                  If you experience any issues accessing or downloading your generated images, contact our support team at shivanksharma.ai@gmail.com.
                 </p>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">10. Contact for Delivery Inquiries</h2>
-                <p>
-                  For questions about delivery or access to your images, please contact us:
-                </p>
-                <ul className="list-none pl-0 space-y-1 mt-2">
-                  <li>Email: [YOUR_EMAIL]</li>
-                  <li>Support Hours: [YOUR_BUSINESS_HOURS]</li>
-                </ul>
               </section>
             </div>
           </Card>
