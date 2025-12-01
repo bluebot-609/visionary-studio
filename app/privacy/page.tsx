@@ -39,142 +39,146 @@ export default function PrivacyPolicyPage() {
         <main className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 sm:py-16 md:px-8 md:py-20">
           <Card className="bg-white/[0.04] p-6 sm:p-8 md:p-10">
             <h1 className="font-display text-3xl text-white sm:text-4xl md:text-5xl mb-2">
-              Privacy Policy
+              Privacy Policy — AdShotAI
             </h1>
             <p className="text-sm text-white/60 mb-8 sm:text-base">
-              Last updated: [DATE]
+              Last Updated: 2025-12-02
             </p>
 
             <div className="prose prose-invert max-w-none space-y-6 text-sm text-white/80 sm:space-y-8 sm:text-base">
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">1. Introduction</h2>
                 <p>
-                  [YOUR_BUSINESS_NAME] (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates AdShotAI, an AI-powered product photography service. 
-                  This Privacy Policy explains how we collect, use, store, and share your information when you use our service.
+                  AdShotAI (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is operated by Shivank Sharma, an independent developer based in India. This Privacy Policy explains how we collect, use, and protect your information when you use our services.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">2. Information We Collect</h2>
-                <h3 className="font-semibold text-white mb-2 mt-4">2.1 Information You Provide</h3>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">1. Information We Collect</h2>
+                <h3 className="font-semibold text-white mb-2 mt-4">A. Information You Provide</h3>
                 <ul className="list-disc pl-6 space-y-2">
-                  <li>Account information (name, email address) when you sign up</li>
-                  <li>Product images and reference photos you upload</li>
-                  <li>Payment information processed through Razorpay</li>
+                  <li>Email address</li>
+                  <li>Name (optional or from Google Sign-in)</li>
+                  <li>Uploaded product images</li>
+                  <li>Support messages</li>
+                  <li>Payment-related details required by Razorpay (we never store card data)</li>
                 </ul>
 
-                <h3 className="font-semibold text-white mb-2 mt-4">2.2 Google OAuth Data</h3>
+                <h3 className="font-semibold text-white mb-2 mt-4">B. Information Collected Automatically</h3>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>IP address</li>
+                  <li>Device/browser data</li>
+                  <li>Usage logs</li>
+                  <li>Analytics</li>
+                  <li>Cookies required for functionality and auth</li>
+                </ul>
+
+                <h3 className="font-semibold text-white mb-2 mt-4">C. Google OAuth Data</h3>
                 <p>
-                  When you sign in with Google, we collect the following information from your Google account:
-                </p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Basic profile information (name, email address, profile picture)</li>
-                  <li>Account identifier for authentication purposes</li>
-                </ul>
-                <p className="mt-2">
-                  We only access the minimum information necessary to provide our authentication service. 
-                  We do not access, store, or share any other Google user data beyond what is required for authentication.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">3. How We Use Your Information</h2>
-                <p>We use the information we collect to:</p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Provide, maintain, and improve our AI photography services</li>
-                  <li>Process your payments and manage your account</li>
-                  <li>Authenticate your identity through Google OAuth</li>
-                  <li>Generate AI-powered product images based on your uploads</li>
-                  <li>Communicate with you about your account and our services</li>
-                  <li>Comply with legal obligations</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">4. Google API Services User Data Policy</h2>
-                <p>
-                  Our use of information received from Google APIs adheres to the{' '}
-                  <a href="https://developers.google.com/terms/api-services-user-data-policy" 
-                     className="text-accent hover:underline" 
-                     target="_blank" 
-                     rel="noopener noreferrer">
-                    Google API Services User Data Policy
-                  </a>, including the Limited Use requirements.
+                  If you sign in using Google, we receive:
                 </p>
                 <ul className="list-disc pl-6 space-y-2 mt-2">
-                  <li>We only use Google user data to provide authentication services</li>
-                  <li>We do not transfer Google user data to third parties except as necessary to provide our service</li>
-                  <li>We do not use Google user data for advertising purposes</li>
-                  <li>We do not allow humans to read Google user data unless required for security purposes or with your explicit consent</li>
+                  <li>Your name</li>
+                  <li>Your email</li>
+                  <li>Your Google profile picture</li>
+                </ul>
+                <p className="mt-2">
+                  We only request basic scopes (openid, email, profile).
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">2. How We Use Your Information</h2>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>To provide AI image generation services</li>
+                  <li>To process payments via Razorpay</li>
+                  <li>To authenticate users (Google OAuth or email login)</li>
+                  <li>To send service-related messages (billing, support, updates)</li>
+                  <li>To improve stability, performance, and features (analytics)</li>
                 </ul>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">5. Data Storage and Security</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">3. Sharing of Information</h2>
+                <p>We do not sell personal data.</p>
+                <p className="mt-2">
+                  We only share information with third parties necessary to operate the service:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 mt-2">
+                  <li>Razorpay (payments)</li>
+                  <li>Cloud storage providers (image storage)</li>
+                  <li>Analytics providers (usage insights)</li>
+                </ul>
+                <p className="mt-2">
+                  All third parties comply with applicable privacy and data security standards.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">4. Cookies</h2>
+                <p>We use cookies for:</p>
+                <ul className="list-disc pl-6 space-y-2 mt-2">
+                  <li>Login sessions</li>
+                  <li>Site functionality</li>
+                  <li>Analytics</li>
+                </ul>
+                <p className="mt-2">
+                  You can control cookies in browser settings.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">5. Data Retention</h2>
                 <p>
-                  We store your data securely using industry-standard encryption and security measures. 
-                  Your images and account information are stored on [YOUR_STORAGE_PROVIDER] servers.
+                  We retain your data as long as your account exists and for legitimate business needs.
                 </p>
                 <p className="mt-2">
-                  We retain your data for as long as your account is active or as needed to provide our services. 
-                  You may request deletion of your data at any time by contacting us at [YOUR_EMAIL].
+                  You may request deletion anytime by emailing: shivanksharma.ai@gmail.com
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">6. Data Sharing</h2>
-                <p>We do not sell your personal information. We may share your information only in the following circumstances:</p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>With service providers who assist us in operating our service (e.g., payment processors, cloud storage)</li>
-                  <li>When required by law or to protect our rights</li>
-                  <li>With your explicit consent</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">7. Your Rights</h2>
-                <p>You have the right to:</p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Access your personal data</li>
-                  <li>Correct inaccurate data</li>
-                  <li>Request deletion of your data</li>
-                  <li>Export your data</li>
-                  <li>Revoke Google OAuth access at any time through your Google account settings</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">8. Cookies and Tracking</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">6. Data Security</h2>
                 <p>
-                  We use cookies and similar technologies to maintain your session and improve your experience. 
-                  You can control cookie preferences through your browser settings.
+                  We use SSL/TLS and industry-standard safeguards.
+                </p>
+                <p className="mt-2">
+                  No system is fully secure; use the service with this understanding.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">9. Children&apos;s Privacy</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">7. Children</h2>
                 <p>
-                  Our service is not intended for users under the age of 18. We do not knowingly collect personal information from children.
+                  Not intended for users under 13.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">10. Changes to This Policy</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">8. International Processing</h2>
                 <p>
-                  We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new 
-                  Privacy Policy on this page and updating the &quot;Last updated&quot; date.
+                  Your data may be stored or processed on servers located outside your region.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">11. Contact Us</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">9. Changes</h2>
                 <p>
-                  If you have questions about this Privacy Policy, please contact us at:
+                  We may update this policy. A new &quot;Last Updated&quot; date will reflect changes.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">10. Contact</h2>
+                <p>
+                  For privacy requests or questions:
                 </p>
                 <ul className="list-none pl-0 space-y-1 mt-2">
-                  <li>Email: [YOUR_EMAIL]</li>
-                  <li>Address: [YOUR_BUSINESS_ADDRESS]</li>
+                  <li>shivanksharma.ai@gmail.com</li>
+                  <li>Operated from Bengaluru, India</li>
                 </ul>
+                <p className="mt-2 text-sm text-white/60">
+                  (Govt-verified legal address: Ghaziabad, Uttar Pradesh — not displayed publicly)
+                </p>
               </section>
             </div>
           </Card>

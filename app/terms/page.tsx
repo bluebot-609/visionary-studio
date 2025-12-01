@@ -39,154 +39,123 @@ export default function TermsOfServicePage() {
         <main className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 sm:py-16 md:px-8 md:py-20">
           <Card className="bg-white/[0.04] p-6 sm:p-8 md:p-10">
             <h1 className="font-display text-3xl text-white sm:text-4xl md:text-5xl mb-2">
-              Terms of Service
+              Terms of Service — AdShotAI
             </h1>
             <p className="text-sm text-white/60 mb-8 sm:text-base">
-              Last updated: [DATE]
+              Last Updated: 2025-12-02
             </p>
 
             <div className="prose prose-invert max-w-none space-y-6 text-sm text-white/80 sm:space-y-8 sm:text-base">
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">1. Agreement to Terms</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">1. Agreement</h2>
                 <p>
-                  By accessing or using AdShotAI (&quot;the Service&quot;), you agree to be bound by these Terms of Service. 
-                  If you disagree with any part of these terms, you may not access the Service.
+                  By using AdShotAI, you agree to these Terms. Do not use the service if you disagree.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">2. Description of Service</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">2. Operator</h2>
                 <p>
-                  AdShotAI is an AI-powered product photography service that generates professional product images 
-                  using artificial intelligence. The Service allows users to upload product images and generate 
-                  stylized, professional photographs for commercial and personal use.
+                  AdShotAI is owned and operated by Shivank Sharma, an independent developer based in India.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">3. User Accounts</h2>
-                <h3 className="font-semibold text-white mb-2 mt-4">3.1 Account Creation</h3>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">3. Services</h2>
                 <p>
-                  To use the Service, you must create an account using Google OAuth authentication. 
-                  You are responsible for maintaining the security of your account.
+                  AdShotAI provides AI-based product photography generation. Features may evolve or change.
                 </p>
+              </section>
 
-                <h3 className="font-semibold text-white mb-2 mt-4">3.2 Account Responsibilities</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>You must provide accurate and complete information</li>
-                  <li>You are responsible for all activities under your account</li>
-                  <li>You must notify us immediately of any unauthorized use</li>
-                  <li>You must be at least 18 years old to use the Service</li>
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">4. Accounts &amp; Authentication</h2>
+                <p>You may sign in using:</p>
+                <ul className="list-disc pl-6 space-y-2 mt-2">
+                  <li>Google OAuth</li>
+                  <li>Email-based login (if available)</li>
                 </ul>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">4. Credits and Payment</h2>
-                <h3 className="font-semibold text-white mb-2 mt-4">4.1 Credit System</h3>
-                <p>
-                  The Service operates on a credit-based system. Each image generation consumes credits. 
-                  Credits can be purchased through Razorpay payment gateway.
+                <p className="mt-2">
+                  Using Google OAuth grants us access to your name, email, and profile picture.
                 </p>
-
-                <h3 className="font-semibold text-white mb-2 mt-4">4.2 Payment Terms</h3>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>All payments are processed through Razorpay</li>
-                  <li>Credits are non-refundable except as specified in our Refund Policy</li>
-                  <li>Prices are subject to change with notice</li>
-                  <li>Unused credits do not expire unless otherwise stated</li>
-                </ul>
               </section>
 
               <section>
                 <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">5. Acceptable Use</h2>
-                <p>You agree not to:</p>
-                <ul className="list-disc pl-6 space-y-2">
-                  <li>Use the Service for illegal purposes</li>
-                  <li>Upload content that is illegal, harmful, or violates others&apos; rights</li>
-                  <li>Attempt to reverse engineer or extract AI models</li>
-                  <li>Use the Service to generate content that infringes on intellectual property rights</li>
-                  <li>Resell or redistribute generated images without proper licensing</li>
-                  <li>Interfere with or disrupt the Service</li>
+                <p>You agree NOT to:</p>
+                <ul className="list-disc pl-6 space-y-2 mt-2">
+                  <li>Upload illegal, harmful, or infringing content</li>
+                  <li>Upload sexual, violent, or prohibited items</li>
+                  <li>Try to bypass, exploit, or reverse-engineer the system</li>
+                  <li>Use the platform for misinformation or harmful actions</li>
                 </ul>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">6. Intellectual Property</h2>
-                <h3 className="font-semibold text-white mb-2 mt-4">6.1 Your Content</h3>
-                <p>
-                  You retain ownership of images you upload. By uploading content, you grant us a license to use 
-                  it solely for providing the Service.
-                </p>
-
-                <h3 className="font-semibold text-white mb-2 mt-4">6.2 Generated Images</h3>
-                <p>
-                  You own the rights to images generated through the Service. You may use generated images for 
-                  commercial purposes, subject to these Terms.
-                </p>
-
-                <h3 className="font-semibold text-white mb-2 mt-4">6.3 Service Intellectual Property</h3>
-                <p>
-                  The Service, including its design, functionality, and AI technology, is owned by [YOUR_BUSINESS_NAME] 
-                  and protected by intellectual property laws.
+                <p className="mt-2">
+                  Violation may result in suspension or termination.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">7. Limitation of Liability</h2>
-                <p>
-                  THE SERVICE IS PROVIDED &quot;AS IS&quot; WITHOUT WARRANTIES OF ANY KIND. WE DISCLAIM ALL WARRANTIES, 
-                  EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">6. Your Content</h2>
+                <p>You own the content you upload.</p>
+                <p className="mt-2">
+                  You must have the rights to upload it.
                 </p>
                 <p className="mt-2">
-                  TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, 
-                  SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE SERVICE.
+                  Generated outputs are licensed to you for personal or commercial use unless stated otherwise.
                 </p>
               </section>
 
               <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">8. Service Availability</h2>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">7. Payments &amp; Credits</h2>
                 <p>
-                  We strive to maintain Service availability but do not guarantee uninterrupted access. 
-                  We reserve the right to modify, suspend, or discontinue the Service at any time.
+                  See <a href="/refund" className="text-accent hover:underline">/refund</a>.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">8. Limitation of Liability</h2>
+                <p>
+                  AdShotAI is provided &quot;as is&quot;.
+                </p>
+                <p className="mt-2">
+                  Our maximum liability is limited to the amount you paid in the last 6 months.
                 </p>
               </section>
 
               <section>
                 <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">9. Termination</h2>
+                <p>We may suspend or terminate accounts for:</p>
+                <ul className="list-disc pl-6 space-y-2 mt-2">
+                  <li>Abuse</li>
+                  <li>Payment fraud</li>
+                  <li>Violations of these Terms</li>
+                </ul>
+                <p className="mt-2">
+                  You may request account deletion anytime.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">10. Governing Law</h2>
                 <p>
-                  We may terminate or suspend your account immediately, without prior notice, for conduct that 
-                  we believe violates these Terms or is harmful to other users or the Service.
+                  These Terms are governed by Indian law. Disputes fall under courts in Bengaluru, Karnataka.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">11. Changes</h2>
+                <p>
+                  Terms may be updated with notice via website updates.
+                </p>
+              </section>
+
+              <section>
+                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Contact</h2>
+                <p>
+                  shivanksharma.ai@gmail.com
                 </p>
                 <p className="mt-2">
-                  You may terminate your account at any time by contacting us at [YOUR_EMAIL].
+                  Bengaluru, India
                 </p>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">10. Changes to Terms</h2>
-                <p>
-                  We reserve the right to modify these Terms at any time. We will notify users of material changes. 
-                  Continued use of the Service after changes constitutes acceptance of the new Terms.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">11. Governing Law</h2>
-                <p>
-                  These Terms shall be governed by and construed in accordance with the laws of [YOUR_JURISDICTION], 
-                  without regard to its conflict of law provisions.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">12. Contact Information</h2>
-                <p>
-                  If you have questions about these Terms, please contact us at:
-                </p>
-                <ul className="list-none pl-0 space-y-1 mt-2">
-                  <li>Email: [YOUR_EMAIL]</li>
-                  <li>Address: [YOUR_BUSINESS_ADDRESS]</li>
-                </ul>
               </section>
             </div>
           </Card>

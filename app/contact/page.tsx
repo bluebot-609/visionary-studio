@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { BackgroundBlobs } from '../../components/background-blobs';
-import { Mail, MapPin, Phone } from 'lucide-react';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -64,70 +63,32 @@ export default function ContactPage() {
             <h1 className="font-display text-3xl text-white sm:text-4xl md:text-5xl mb-2">
               Contact Us
             </h1>
-            <p className="text-sm text-white/60 mb-8 sm:text-base">
-              Get in touch with our team
+            <p className="text-sm text-white/80 mb-8 sm:text-base">
+              Have questions or need support? I&apos;m here to help.
             </p>
 
-            <div className="grid gap-8 md:grid-cols-2">
-              <div className="space-y-6">
-                <section>
-                  <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Business Information</h2>
-                  
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <MapPin className="h-5 w-5 text-accent mt-1 flex-shrink-0" />
-                      <div>
-                        <p className="font-semibold text-white mb-1">Registered Address</p>
-                        <p className="text-sm text-white/70">
-                          [YOUR_REGISTERED_ADDRESS]
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <MapPin className="h-5 w-5 text-accent mt-1 flex-shrink-0" />
-                      <div>
-                        <p className="font-semibold text-white mb-1">Operating Address</p>
-                        <p className="text-sm text-white/70">
-                          [YOUR_OPERATING_ADDRESS]
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-5 w-5 text-accent mt-1 flex-shrink-0" />
-                      <div>
-                        <p className="font-semibold text-white mb-1">Email</p>
-                        <a href="mailto:[YOUR_EMAIL]" className="text-sm text-accent hover:underline">
-                          [YOUR_EMAIL]
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Phone className="h-5 w-5 text-accent mt-1 flex-shrink-0" />
-                      <div>
-                        <p className="font-semibold text-white mb-1">Phone</p>
-                        <a href="tel:[YOUR_PHONE_NUMBER]" className="text-sm text-accent hover:underline">
-                          [YOUR_PHONE_NUMBER]
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section>
-                  <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Business Hours</h2>
-                  <p className="text-sm text-white/70">
-                    [YOUR_BUSINESS_HOURS]
-                    <br />
-                    Example: Monday - Friday, 9:00 AM - 6:00 PM [YOUR_TIMEZONE]
-                  </p>
-                </section>
+            <div className="space-y-6 mb-8">
+              <div className="space-y-3">
+                <p className="text-sm text-white/80">
+                  <strong className="text-white">Email:</strong> <a href="mailto:shivanksharma.ai@gmail.com" className="text-accent hover:underline">shivanksharma.ai@gmail.com</a>
+                </p>
+                <p className="text-sm text-white/80">
+                  <strong className="text-white">Response Time:</strong> Usually within 24 hours
+                </p>
+                <p className="text-sm text-white/80">
+                  <strong className="text-white">Operating Location:</strong> Bengaluru, India
+                </p>
+                <p className="text-xs text-white/50 mt-2">
+                  (AdShotAI is independently run by a solo developer.)
+                </p>
               </div>
+              <p className="text-sm text-white/80">
+                You can send a message anytime through the form below.
+              </p>
+            </div>
 
-              <div>
-                <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Send us a Message</h2>
+            <div>
+              <h2 className="font-display text-xl text-white mb-4 sm:text-2xl">Send us a Message</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-white/80 mb-2">
@@ -209,7 +170,6 @@ export default function ContactPage() {
                     {isSubmitting ? 'Sending...' : 'Send Message'}
                   </Button>
                 </form>
-              </div>
             </div>
           </Card>
         </main>
