@@ -33,14 +33,14 @@ const INDIA_PACKAGES: CreditPackage[] = [
   createPackage({
     id: 'starter',
     name: 'Starter',
-    credits: 12,
+    credits: 120,
     price: 199,
     currency: 'INR',
   }),
   createPackage({
     id: 'popular',
     name: 'Popular',
-    credits: 24,
+    credits: 240,
     price: 299,
     currency: 'INR',
     popular: true,
@@ -48,7 +48,7 @@ const INDIA_PACKAGES: CreditPackage[] = [
   createPackage({
     id: 'pro',
     name: 'Pro',
-    credits: 48,
+    credits: 480,
     price: 549,
     currency: 'INR',
   }),
@@ -59,14 +59,14 @@ const INTERNATIONAL_PACKAGES: CreditPackage[] = [
   createPackage({
     id: 'starter',
     name: 'Starter',
-    credits: 12,
+    credits: 120,
     price: 3.99,
     currency: 'USD',
   }),
   createPackage({
     id: 'popular',
     name: 'Popular',
-    credits: 24,
+    credits: 240,
     price: 6.99,
     currency: 'USD',
     popular: true,
@@ -74,7 +74,7 @@ const INTERNATIONAL_PACKAGES: CreditPackage[] = [
   createPackage({
     id: 'pro',
     name: 'Pro',
-    credits: 48,
+    credits: 480,
     price: 9.99,
     currency: 'USD',
   }),
@@ -194,13 +194,10 @@ export const PricingSection: React.FC<PricingSectionProps> = ({ onSignUp }) => {
                   for {pkg.credits} credits
                 </span>
               </div>
-              <p className="mt-2 text-xs text-white/50 sm:text-sm">
-                {formatPrice(pkg.pricePerCredit, pkg.currency)} per credit
-              </p>
               <ul className="mt-6 space-y-2 text-xs text-white/75 sm:mt-8 sm:space-y-3 sm:text-sm">
                 <li className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 sm:gap-3 sm:px-4">
                   <Sparkles className="h-3 w-3 flex-shrink-0 text-accent sm:h-4 sm:w-4" />
-                  <span>{pkg.credits} professional image generations</span>
+                  <span>Up to {Math.floor(pkg.credits / 10)} professional image generations</span>
                 </li>
                 <li className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 sm:gap-3 sm:px-4">
                   <Sparkles className="h-3 w-3 flex-shrink-0 text-accent sm:h-4 sm:w-4" />

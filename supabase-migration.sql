@@ -133,17 +133,17 @@ BEGIN
   -- Note: trial_credits_granted and trial_granted_at columns need to be added manually
   -- to auth.users table via Supabase dashboard or with service role key
   
-  -- Add 3 credits to balance
+  -- Add 35 credits to balance
   INSERT INTO public.user_credits (user_id, balance)
-  VALUES (p_user_id, 3)
+  VALUES (p_user_id, 35)
   ON CONFLICT (user_id) 
   DO UPDATE SET 
-    balance = user_credits.balance + 3,
+    balance = user_credits.balance + 35,
     updated_at = NOW();
   
   -- Record transaction
   INSERT INTO public.credit_transactions (user_id, amount, type, source, metadata)
-  VALUES (p_user_id, 3, 'free_trial', 'signup_bonus', jsonb_build_object('credits', 3));
+  VALUES (p_user_id, 35, 'free_trial', 'signup_bonus', jsonb_build_object('credits', 35));
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
