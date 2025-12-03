@@ -12,9 +12,9 @@ const fileToImageData = (file: UploadedFile) => {
 };
 
 const getCreditCost = (isProMode: boolean, resolution: string): number => {
-  if (!isProMode) return 1;
-  if (resolution === '4K') return 4;
-  return 3; // default Pro 2K / other pro modes
+  if (!isProMode) return 10;
+  if (resolution === '4K') return 40;
+  return 25; // default Pro 1K/2K
 };
 
 export async function POST(request: NextRequest) {
