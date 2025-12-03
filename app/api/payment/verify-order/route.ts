@@ -6,9 +6,9 @@ import { addCredits } from '@/services/creditService';
 
 // Credit package mapping from packageId to credits
 const PACKAGE_CREDITS: Record<string, number> = {
-  'starter': 12,
-  'popular': 24,
-  'pro': 48,
+  'starter': 120,
+  'popular': 240,
+  'pro': 480,
 };
 
 export async function POST(request: NextRequest) {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const packageMatch = packageId?.match(/^credits_(.+?)_(\d+)$/);
     const credits = packageMatch 
       ? parseInt(packageMatch[2], 10)
-      : PACKAGE_CREDITS[packageId] || 12; // Default to smallest package if not found
+      : PACKAGE_CREDITS[packageId] || 120; // Default to smallest package if not found
 
     // Add credits to user account
     const result = await addCredits(

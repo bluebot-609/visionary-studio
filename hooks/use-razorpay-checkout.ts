@@ -75,7 +75,7 @@ export const useRazorpayCheckout = () => {
           key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
           amount: order.amount,
           currency: order.currency,
-          name: 'Visionary Studio',
+          name: 'AdShotAI',
           description: payload.planId ?? 'Studio Subscription',
           order_id: order.orderId,
           prefill: {

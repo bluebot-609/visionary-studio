@@ -49,9 +49,9 @@ const ASPECT_RATIOS: Array<{ value: '1:1' | '9:16' | '4:3' | '3:4' | '16:9'; lab
 ];
 
 const RESOLUTIONS: Array<{ value: '1K' | '2K' | '4K'; label: string; sublabel: string; credits: number }> = [
-  { value: '1K', label: '1K', sublabel: 'Standard', credits: 3 },
-  { value: '2K', label: '2K', sublabel: 'High', credits: 3 },
-  { value: '4K', label: '4K', sublabel: 'Ultra', credits: 4 },
+  { value: '1K', label: '1K', sublabel: 'Standard', credits: 25 },
+  { value: '2K', label: '2K', sublabel: 'High', credits: 25 },
+  { value: '4K', label: '4K', sublabel: 'Ultra', credits: 40 },
 ];
 
 export const InputPanel: React.FC<InputPanelProps> = ({
@@ -91,7 +91,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
   const canGenerateConcepts = productImage && !referenceImage;
 
   // Credit cost calculation
-  const creditCost = isProMode ? (resolution === '4K' ? 4 : 3) : 1;
+  const creditCost = isProMode ? (resolution === '4K' ? 40 : 25) : 10;
   const insufficientCredits = !creditsLoading && availableCredits > -1 && availableCredits < creditCost;
 
   // Handle text overlay change - uncheck autoGenerateText when user types
@@ -148,7 +148,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
       </div>
 
       {/* Image Uploaders */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={`grid gap-6 ${isProMode ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
         <ImageUploader
           id="product-image"
           label="Product Image (Required)"
@@ -156,12 +156,14 @@ export const InputPanel: React.FC<InputPanelProps> = ({
           previewUrl={productImagePreview}
           required
         />
-        <ImageUploader
-          id="reference-image"
-          label="Reference Image (Optional)"
-          onFileChange={onReferenceImageChange}
-          previewUrl={referenceImagePreview}
-        />
+        {isProMode && (
+          <ImageUploader
+            id="reference-image"
+            label="Reference Image (Optional)"
+            onFileChange={onReferenceImageChange}
+            previewUrl={referenceImagePreview}
+          />
+        )}
       </div>
 
       {/* Shot Type Selector */}
@@ -416,6 +418,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               <>
                 {isProMode && <span className="mr-2">✨</span>}
                 {isProMode ? 'Generate with Pro' : 'Generate Photoshoot'}
+                <span className="ml-2 text-sm opacity-80">({creditCost} credits)</span>
               </>
             )}
           </button>
@@ -454,6 +457,7 @@ export const InputPanel: React.FC<InputPanelProps> = ({
               <>
                 {isProMode && <span className="mr-2">✨</span>}
                 {isProMode ? 'Generate with Pro' : 'Generate Photoshoot'}
+                <span className="ml-2 text-sm opacity-80">({creditCost} credits)</span>
               </>
             )}
           </button>

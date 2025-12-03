@@ -32,14 +32,14 @@ const INDIA_PACKAGES: CreditPackage[] = [
   createPackage({
     id: 'starter',
     name: 'Starter',
-    credits: 12,
+    credits: 120,
     price: 199,
     currency: 'INR',
   }),
   createPackage({
     id: 'popular',
     name: 'Popular',
-    credits: 24,
+    credits: 240,
     price: 299,
     currency: 'INR',
     popular: true,
@@ -47,7 +47,7 @@ const INDIA_PACKAGES: CreditPackage[] = [
   createPackage({
     id: 'pro',
     name: 'Pro',
-    credits: 48,
+    credits: 480,
     price: 549,
     currency: 'INR',
   }),
@@ -58,14 +58,14 @@ const INTERNATIONAL_PACKAGES: CreditPackage[] = [
   createPackage({
     id: 'starter',
     name: 'Starter',
-    credits: 12,
+    credits: 120,
     price: 3.99,
     currency: 'USD',
   }),
   createPackage({
     id: 'popular',
     name: 'Popular',
-    credits: 24,
+    credits: 240,
     price: 6.99,
     currency: 'USD',
     popular: true,
@@ -73,7 +73,7 @@ const INTERNATIONAL_PACKAGES: CreditPackage[] = [
   createPackage({
     id: 'pro',
     name: 'Pro',
-    credits: 48,
+    credits: 480,
     price: 9.99,
     currency: 'USD',
   }),
@@ -250,7 +250,7 @@ export const CreditPurchaseModal: React.FC<CreditPurchaseModalProps> = ({
                   <span className="ml-2 text-sm text-white/60">for {pkg.credits} credits</span>
                 </div>
                 <p className="mt-1 text-xs text-white/50">
-                  {formatPrice(pkg.pricePerCredit, pkg.currency)} per credit
+                  Up to {Math.floor(pkg.credits / 10)} professional image generations
                 </p>
               </div>
               <button

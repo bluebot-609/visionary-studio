@@ -51,10 +51,10 @@ export const DashboardMain: React.FC<DashboardMainProps> = ({ userId, onImageSav
   const [isGeneratingConcepts, setIsGeneratingConcepts] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Credit cost: Standard = 1, Pro 1K/2K = 3, Pro 4K = 4
+  // Credit cost: Standard = 10, Pro 1K/2K = 25, Pro 4K = 40
   const creditCost = useMemo(() => {
-    if (!isProMode) return 1;
-    return resolution === '4K' ? 4 : 3;
+    if (!isProMode) return 10;
+    return resolution === '4K' ? 40 : 25;
   }, [isProMode, resolution]);
 
   const handleProductImageChange = (file: File | null) => {

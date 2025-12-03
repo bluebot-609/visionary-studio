@@ -280,7 +280,7 @@ export default function LandingPage() {
                 Choose the plan that fits your needs
               </h2>
               <p className="max-w-2xl self-center text-sm text-white/70 sm:text-base md:text-lg">
-                Start with 3 free credits, then purchase credit packages as you need them.
+                Start with 35 free credits, then purchase credit packages as you need them.
                 No subscriptions, no commitments—pay only for what you use.
               </p>
             </div>
