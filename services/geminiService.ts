@@ -41,18 +41,32 @@ export const generateCreativeConcepts = async (
 For each concept, provide:
 1.  A short, catchy title.
 2.  A detailed description of the scene, including props, background, and overall aesthetic.
-3.  A description of the lighting (e.g., 'dramatic high-contrast lighting', 'soft, ethereal backlighting').
-4.  A description of the product's arrangement and placement in the scene.
-5.  A description of the overall mood.
-${isProMode && autoGenerateText ? "6.  A suggestion for text overlay (content, font style, and placement)." : ""}
+3.  A concise scene summary (1-2 lines) that captures the essence of the scene description.
+4.  A description of the lighting (e.g., 'dramatic high-contrast lighting', 'soft, ethereal backlighting').
+5.  A simple, self-explanatory lighting summary (1-2 words only) for the pill/badge that a normal person can instantly understand (e.g., 'Bright Spotlight', 'Soft Glow', 'Natural Light', 'Dramatic Shadows'). Avoid technical jargon - use everyday language.
+6.  Three readable bullet points about the lighting, written in simple language for non-professionals. Each bullet should be a complete, easy-to-understand sentence.
+8.  A description of the product's arrangement and placement in the scene.
+9.  A simple, self-explanatory arrangement summary (1-2 words only) for the pill/badge that a normal person can instantly understand (e.g., 'Centered', 'Side View', 'Close Up', 'Upright'). Avoid technical jargon - use everyday language.
+10. Three readable bullet points about the product arrangement, written in simple language for non-professionals. Each bullet should be a complete, easy-to-understand sentence.
+11. A description of the overall mood.
+12. A simple, self-explanatory mood summary (1-2 words only) for the pill/badge that a normal person can instantly understand (e.g., 'Calm', 'Energetic', 'Confident', 'Mysterious'). Avoid technical jargon - use everyday language.
+13. Three readable bullet points about the mood, written in simple language for non-professionals. Each bullet should be a complete, easy-to-understand sentence.
+${isProMode && autoGenerateText ? "14. A suggestion for text overlay (content, font style, and placement)." : ""}
 `;
 
   const schemaProperties: any = {
     title: { type: Type.STRING },
     scene_description: { type: Type.STRING },
+    scene_summary: { type: Type.STRING },
     lighting: { type: Type.STRING },
+    lighting_summary: { type: Type.STRING },
+    lighting_bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
     product_arrangement: { type: Type.STRING },
+    arrangement_summary: { type: Type.STRING },
+    arrangement_bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
     mood: { type: Type.STRING },
+    mood_summary: { type: Type.STRING },
+    mood_bullets: { type: Type.ARRAY, items: { type: Type.STRING } },
   };
 
   if (isProMode && autoGenerateText) {
@@ -86,9 +100,16 @@ ${isProMode && autoGenerateText ? "6.  A suggestion for text overlay (content, f
             required: [
               "title",
               "scene_description",
+              "scene_summary",
               "lighting",
+              "lighting_summary",
+              "lighting_bullets",
               "product_arrangement",
+              "arrangement_summary",
+              "arrangement_bullets",
               "mood",
+              "mood_summary",
+              "mood_bullets",
               ...(isProMode && autoGenerateText ? ["text_overlay_suggestion"] : []),
             ],
           },
