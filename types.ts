@@ -271,9 +271,16 @@ export type ShotType = 'product' | 'model';
 export interface CreativeConcept {
   title: string;
   scene_description: string;
+  scene_summary: string; // 1-2 lines summary of scene
   lighting: string;
+  lighting_summary: string; // 1-2 words summary of lighting
+  lighting_bullets: string[]; // 3 readable bullet points
   mood: string;
+  mood_summary: string; // 1-2 words summary of mood
+  mood_bullets: string[]; // 3 readable bullet points
   product_arrangement: string;
+  arrangement_summary: string; // 1-2 words, simple summary for pill (e.g., "Centered", "Side View")
+  arrangement_bullets: string[]; // 3 readable bullet points
   text_overlay_suggestion?: {
     text_content: string;
     font_style: string;
